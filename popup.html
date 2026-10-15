@@ -1,0 +1,286 @@
+<!-- YT Silence Cutter · Author: Pavneet Singh (pavnxet) · MIT License
+     https://github.com/pavnxet/yt-silence-cutter -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Silence Cutter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      /* Claude theme — warm ivory canvas, terracotta accent, serif headings */
+      :root {
+        --bg: #FAF9F5;
+        --bg-alt: #F5F4EE;
+        --surface: #FFFFFF;
+        --surface-2: #F5F4EE;
+        --border: #E8E6DF;
+        --border-strong: #D9D6CC;
+        --text: #1F1E1D;
+        --text-2: #575653;
+        --text-3: #87867F;
+        --accent: #D97757;
+        --accent-hover: #C15F3C;
+        --accent-active: #A94F2F;
+        --accent-soft: #F6E8E1;
+        --accent-ink: #8A3F24;
+        --accent-ring: rgba(217, 119, 87, 0.35);
+        --radius: 10px;
+        --radius-md: 14px;
+        --radius-lg: 20px;
+        --font-heading: "Copernicus", "Tiempos Headline", "Source Serif 4", "Fraunces", Georgia, serif;
+        --font-body: "Styrene B", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --shadow-sm: 0 2px 6px rgba(31, 30, 29, 0.06);
+        --shadow-md: 0 6px 20px rgba(31, 30, 29, 0.08);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        width: 300px;
+        background: var(--bg);
+        color: var(--text);
+        font: 400 14px/1.5 var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+      .wrap { padding: 18px 18px 20px; }
+      .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+      .mark {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #DE9476, #C15F3C);
+        box-shadow: var(--shadow-sm);
+      }
+      .brand b {
+        font-family: var(--font-heading);
+        font-size: 18px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+      }
+      .row .label { font-weight: 600; }
+      .row .sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+      /* toggle */
+      .switch { position: relative; width: 46px; height: 26px; flex: none; }
+      .switch input { opacity: 0; width: 0; height: 0; }
+      .slider {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: var(--border-strong);
+        transition: 0.2s;
+        cursor: pointer;
+      }
+      .slider::before {
+        content: "";
+        position: absolute;
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        top: 3px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(31, 30, 29, 0.2);
+        transition: 0.2s;
+      }
+      input:checked + .slider { background: linear-gradient(135deg, var(--accent), var(--accent-hover)); }
+      input:checked + .slider::before { transform: translateX(20px); }
+      .tune {
+        margin-top: 14px;
+        display: grid;
+        gap: 14px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+      }
+      .tune.disabled { opacity: 0.5; pointer-events: none; }
+      .field label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--text-2);
+        margin-bottom: 7px;
+      }
+      .field label .val { color: var(--text); font-variant-numeric: tabular-nums; }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--border-strong);
+        outline: none;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        margin-top: -5px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid var(--surface);
+        box-shadow: 0 1px 3px rgba(31, 30, 29, 0.25);
+        cursor: pointer;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid var(--surface);
+        cursor: pointer;
+      }
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--border-strong);
+      }
+      /* live audio */
+      .viz {
+        margin-top: 14px;
+        padding: 12px 12px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+      }
+      .viz-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+      .viz-head .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-ring);
+      }
+      .viz-head .t { font-size: 12px; font-weight: 600; color: var(--text-2); }
+      .badge {
+        margin-left: auto;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      }
+      .badge.off {
+        background: var(--surface-2);
+        color: var(--text-3);
+        border: 1px solid var(--border);
+      }
+      #wave { display: block; width: 100%; height: 96px; }
+      .legend {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--text-3);
+      }
+      .legend i {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 3px;
+        margin-right: 6px;
+        vertical-align: -1px;
+      }
+      .legend .speech { background: linear-gradient(135deg, var(--accent), var(--accent-hover)); }
+      .legend .silence { background: var(--border-strong); }
+      .legend b { color: var(--text); }
+      .stat { margin-top: 14px; text-align: center; font-size: 12px; color: var(--text-3); }
+      .stat b { color: var(--accent); }
+      .credit { margin-top: 10px; text-align: center; font-size: 11px; color: var(--text-3); }
+      .credit b { color: var(--accent); font-weight: 600; }
+      [hidden] { display: none !important; }
+    </style>
+    <script type="module" crossorigin src="/chunks/popup-DdYYQyqW.js"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand">
+        <span class="mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M3 12h3l2-6 3 14 3-9 2 3h5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <b>YT Silence Cutter</b>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Skip silence</div>
+          <div class="sub" id="status">—</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="enabled">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="viz">
+        <div class="viz-head">
+          <span class="dot"></span>
+          <span class="t">Live audio</span>
+          <span class="badge" id="activeBadge">Active</span>
+        </div>
+        <canvas id="wave" width="528" height="192"></canvas>
+        <div class="legend">
+          <span><i class="speech"></i>Speech · <b id="speechRate">1×</b></span>
+          <span><i class="silence"></i>Silence · <b id="silenceRate">4×</b></span>
+        </div>
+      </div>
+
+      <div class="tune" id="tune">
+        <div class="field">
+          <label>Playback speed <span class="val" id="baseVal">1×</span></label>
+          <input type="range" id="base" min="0.5" max="4" step="0.25">
+        </div>
+        <div class="field">
+          <label>Silence boost <span class="val" id="speedVal">4×</span></label>
+          <input type="range" id="speed" min="2" max="8" step="0.5">
+        </div>
+        <div class="field">
+          <label>Sensitivity <span class="val" id="threshVal">-45 dB</span></label>
+          <input type="range" id="thresh" min="-60" max="-25" step="1">
+        </div>
+        <div class="field">
+          <label>Filler boost (smart trim) <span class="val" id="lowVal">1.8×</span></label>
+          <input type="range" id="low" min="1" max="3" step="0.1">
+        </div>
+        <div class="field" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <label style="margin:0">Skip silence fully (smart trim)</label>
+          <label class="switch" style="width:40px;height:23px">
+            <input type="checkbox" id="silenceSkip">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="stat"><span id="statSaved">Time saved · 0s</span></div>
+
+      <div class="credit">Made by <b>pavnxet</b></div>
+    </div>
+
+    <script src="/chunks/speed.js"></script>
+    <script src="/chunks/wave.js"></script>
+  </body>
+</html>
