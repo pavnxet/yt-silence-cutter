@@ -1,33 +1,50 @@
-/* Live-audio visualiser for the YT Silence Cutter popup.
-   Receives level frames from the content script (chrome.runtime message
-   "yt-silence-cutter:level") and draws a scrolling speech/silence waveform. */
+/* YT Silence Cutter — live-audio visualiser for the popup.
+   Receives level frames from the content script ("yt-silence-cutter:level")
+   and draws a scrolling speech/silence waveform.
+
+   Rendering is time-based: the window slides continuously with the clock and
+   bar heights are interpolated between the ~60 ms samples (via curve-core),
+   so the animation is smooth at 60 fps rather than stepping one bar per
+   message. Honours prefers-reduced-motion by drawing only on new data.
+
+   Author: Pavneet Singh (pavnxet) · MIT License
+   https://github.com/pavnxet/yt-silence-cutter */
 (function () {
   "use strict";
 
   var canvas = document.getElementById("wave");
   if (!canvas) return;
   var ctx = canvas.getContext("2d");
-  var W = canvas.width;
-  var H = canvas.height;
-  var BAR = 6;
-  var GAP = 3;
+  var C = window.YSCCurve;
+
+  var W = canvas.width, H = canvas.height;
+  var BAR = 6, GAP = 3;
   var N = Math.floor((W + GAP) / (BAR + GAP));
+  var WINDOW_MS = 3600;                 // how much history the window shows
+  var SLOT_MS = WINDOW_MS / N;          // time per bar
+  var BASE = (C && C.BASE) || 0.02;
 
-  var hist = new Array(N).fill(0);
-  var kinds = new Array(N).fill(0); // 0 = silence, 1 = speech
-  for (var i = 0; i < N; i++) hist[i] = 0.02;
+  var reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
-  var activeTab = null;
+  var samples = [];                     // { t, level, speech }, oldest first
   var lastMsg = 0;
   var savedMs = 0;
   var enabled = true;
   var rates = { speech: 1, silence: 4 };
+  var activeTab = null;
 
-  function push(level, speech) {
-    hist.push(Math.max(0, Math.min(1, level)));
-    hist.shift();
-    kinds.push(speech ? 1 : 0);
-    kinds.shift();
+  var gradSpeech = ctx.createLinearGradient(0, 0, 0, H);
+  gradSpeech.addColorStop(0, "#DE9476");
+  gradSpeech.addColorStop(1, "#C15F3C");
+  var gradSilence = ctx.createLinearGradient(0, 0, 0, H);
+  gradSilence.addColorStop(0, "#E8E6DF");
+  gradSilence.addColorStop(1, "#D9D6CC");
+
+  function addSample(level, speech) {
+    var t = performance.now();
+    samples.push({ t: t, level: C ? C.clamp01(level) : Math.max(0, Math.min(1, level)), speech: !!speech });
+    if (C) C.prune(samples, t - WINDOW_MS - 500);
+    else while (samples.length > 400) samples.shift();
   }
 
   function roundRect(x, y, w, h, r) {
@@ -45,25 +62,25 @@
     ctx.fill();
   }
 
-  function draw() {
+  function drawFrame() {
+    var now = performance.now();
     ctx.clearRect(0, 0, W, H);
     var maxH = H - 6;
     for (var i = 0; i < N; i++) {
-      var h = Math.max(3, hist[i] * maxH);
+      var t = now - (N - 1 - i) * SLOT_MS;
+      var lv = C ? C.levelAt(samples, t, BASE) : BASE;
+      var speech = C ? C.kindAt(samples, t) : false;
+      var h = Math.max(3, lv * maxH);
       var x = i * (BAR + GAP);
       var y = H - h - 3;
-      var g = ctx.createLinearGradient(0, y, 0, H);
-      if (kinds[i] === 1) {
-        g.addColorStop(0, "#DE9476");
-        g.addColorStop(1, "#C15F3C");
-      } else {
-        g.addColorStop(0, "#E8E6DF");
-        g.addColorStop(1, "#D9D6CC");
-      }
-      ctx.fillStyle = g;
+      ctx.fillStyle = speech ? gradSpeech : gradSilence;
       roundRect(x, y, BAR, h, 2);
     }
-    requestAnimationFrame(draw);
+  }
+
+  function loop() {
+    drawFrame();
+    if (!reduce) requestAnimationFrame(loop);
   }
 
   var badge = document.getElementById("activeBadge");
@@ -97,7 +114,7 @@
     paintRates();
   }
 
-  // Only follow the tab the popup is open over, so background tabs don't fight.
+  // Follow only the tab the popup is open over.
   if (chrome && chrome.tabs && chrome.tabs.query) {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       if (tabs && tabs[0]) activeTab = tabs[0].id;
@@ -110,24 +127,20 @@
       if (activeTab !== null && (!sender || !sender.tab || sender.tab.id !== activeTab)) return;
       lastMsg = Date.now();
       if (m.active) {
-        push(m.level || 0, !m.silent);
-        if (typeof m.savedMs === "number") {
-          savedMs = m.savedMs;
-          paintSaved();
-        }
+        addSample(m.level || 0, !m.silent);
+        if (typeof m.savedMs === "number") { savedMs = m.savedMs; paintSaved(); }
         if (typeof m.speechRate === "number") rates.speech = m.speechRate;
         if (typeof m.silenceSpeed === "number") rates.silence = m.silenceSpeed;
         paintRates();
       } else {
-        push(0.02, false);
+        addSample(BASE, false);
       }
+      if (reduce) drawFrame();
     });
   }
 
   if (chrome && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get("settings", function (r) {
-      applySettings(r && r.settings);
-    });
+    chrome.storage.local.get("settings", function (r) { applySettings(r && r.settings); });
     chrome.storage.onChanged.addListener(function (ch, area) {
       if (area === "local" && ch.settings) applySettings(ch.settings.newValue);
     });
@@ -135,11 +148,14 @@
 
   // Keep the view alive at a quiet baseline if the tab sends nothing.
   setInterval(function () {
-    if (Date.now() - lastMsg > 600) push(0.02, false);
+    if (Date.now() - lastMsg > 600) {
+      addSample(BASE, false);
+      if (reduce) drawFrame();
+    }
   }, 120);
 
   paintBadge();
   paintRates();
   paintSaved();
-  draw();
+  loop();
 })();

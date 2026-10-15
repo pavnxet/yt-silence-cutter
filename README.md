@@ -47,18 +47,22 @@ How "time saved" is calculated: playing `wall` ms of wall-clock silence at a rat
 
 The raw audio level is jittery, and brief dips inside speech would flicker the graph into "silence". `chunks/smooth-core.js` fixes that with an **asymmetric EMA** — it rises fast (so speech onset shows immediately) and falls slowly (so short gaps don't read as silence) — plus a 300 ms hold before the state is allowed to flip to silence.
 
+The drawing is smooth too. `chunks/curve-core.js` renders the waveform on a continuous clock: the window slides with real time and every bar height is **linearly interpolated** between the ~60 ms samples, so the motion runs at 60 fps instead of stepping one bar per message. The popup and stats pages also honour `prefers-reduced-motion`.
+
 ## Development
 
 No build step. The extension is plain HTML/CSS/JS. Pure logic lives in two testable modules:
 
 - `chunks/stats-core.js` — analytics maths
 - `chunks/smooth-core.js` — the audio smoothing filter
+- `chunks/curve-core.js` — waveform interpolation
 
 Both run unchanged in the browser and under Node. Run the suites with:
 
 ```sh
 node tests/stats.test.js
 node tests/smooth.test.js
+node tests/curve.test.js
 ```
 
 ## Permissions
@@ -77,6 +81,7 @@ content-scripts/         the in-page engine
 chunks/
   stats-core.js          analytics maths (pure, tested)
   smooth-core.js         audio smoothing filter (pure, tested)
+  curve-core.js          waveform interpolation (pure, tested)
   stats.js               stats page renderer
   wave.js                popup live-audio visualiser
   speed.js               popup playback-speed control

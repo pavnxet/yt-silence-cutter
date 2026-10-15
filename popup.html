@@ -212,6 +212,22 @@
       .statsBtn:hover { filter: brightness(1.05); }
       .credit { margin-top: 10px; text-align: center; font-size: 11px; color: var(--text-3); }
       .credit b { color: var(--accent); font-weight: 600; }
+      /* --- motion: keep every state change smooth --- */
+      body { transition: background-color 0.28s ease, color 0.28s ease; }
+      .row, .viz { transition: background-color 0.28s ease, border-color 0.28s ease; }
+      .tune { transition: opacity 0.25s ease, background-color 0.28s ease, border-color 0.28s ease; }
+      .badge { transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
+      .slider { transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+      .slider::before { transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      .statsBtn, .themeBtn { transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, filter 0.2s ease; }
+      .viz-head .dot { animation: yscPulse 2.4s ease-in-out infinite; }
+      @keyframes yscPulse {
+        0%, 100% { box-shadow: 0 0 0 3px var(--accent-ring); }
+        50% { box-shadow: 0 0 0 5px rgba(217, 119, 87, 0.18); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { transition-duration: 0.001ms !important; animation: none !important; }
+      }
       [hidden] { display: none !important; }
     </style>
     <script type="module" crossorigin src="/chunks/popup-DdYYQyqW.js"></script>
@@ -275,6 +291,7 @@
 
     <script src="/chunks/nav.js"></script>
     <script src="/chunks/speed.js"></script>
+    <script src="/chunks/curve-core.js"></script>
     <script src="/chunks/wave.js"></script>
   </body>
 </html>

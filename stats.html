@@ -55,7 +55,7 @@
       .bar {
         width: 100%; border-radius: 5px 5px 2px 2px;
         background: linear-gradient(180deg, #DE9476, #C15F3C);
-        min-height: 2px; transition: height 0.3s ease;
+        min-height: 2px; transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .bar.zero { background: var(--border-strong); }
       .lab { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
@@ -67,6 +67,21 @@
         border-radius: var(--radius); padding: 8px 14px; font: 600 13px var(--font-body); cursor: pointer; transition: 0.15s;
       }
       #reset:hover { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }
+      body { transition: background-color 0.28s ease, color 0.28s ease; }
+      .card, .panel { transition: background-color 0.28s ease, border-color 0.28s ease; }
+      @keyframes yscRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+      .card { animation: yscRise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+      .card:nth-child(1) { animation-delay: 0.02s; }
+      .card:nth-child(2) { animation-delay: 0.06s; }
+      .card:nth-child(3) { animation-delay: 0.10s; }
+      .card:nth-child(4) { animation-delay: 0.14s; }
+      .card:nth-child(5) { animation-delay: 0.18s; }
+      .card:nth-child(6) { animation-delay: 0.22s; }
+      .card:nth-child(7) { animation-delay: 0.26s; }
+      .panel { animation: yscRise 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both; }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { transition-duration: 0.001ms !important; animation: none !important; }
+      }
       @media (max-width: 620px) { .cards { grid-template-columns: 1fr 1fr; } .card.hero { grid-column: span 2; } }
     </style>
   </head>
