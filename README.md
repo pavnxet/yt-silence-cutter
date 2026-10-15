@@ -12,7 +12,8 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 - **Live audio view** — a smooth, real-time waveform in the popup shows speech vs. silence as it plays.
 - **Manual playback speed** — set a base speed (0.5×–4×) in the popup, or just change it on the site; the extension adopts whatever you pick and scales skipping relative to it.
 - **Stats page** — a full analytics view of your time saved, silence skipped, videos and sessions, with a 14-day chart.
-- **Works everywhere** — the basic skip runs entirely locally and applies to any HTML5 video, not just YouTube.
+- **Fully local** — no account, no server, no network calls; every bit of analysis happens in your browser.
+- **Works everywhere** — applies to any HTML5 video, not just YouTube.
 
 ## Install (unpacked)
 
@@ -28,7 +29,7 @@ Firefox: load `manifest.json` via `about:debugging` → *This Firefox* → *Load
 
 - The main toggle turns skipping on or off.
 - **Playback speed** sets your base speed.
-- **Silence boost** / **Filler boost** multiply that base while skipping (e.g. base 1.5× with a 4× boost skips silence at 6×).
+- **Silence boost** multiplies that base while skipping (e.g. base 1.5× with a 4× boost skips silence at 6×).
 - **Sensitivity** is the loudness threshold (in dB) below which audio counts as silence.
 - **View full stats** opens the analytics page.
 
@@ -65,7 +66,7 @@ node tests/smooth.test.js
 - `storage` — remembers your settings and stats.
 - Access to all sites — needed so the skip works on any site with a video.
 
-The extension does not collect or transmit any data. All audio analysis happens locally in your browser.
+The extension does not collect or transmit any data — it makes no network requests at all. All audio analysis happens locally in your browser.
 
 ## Project layout
 

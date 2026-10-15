@@ -1,6 +1,6 @@
 /* Manual playback-speed control for the YT Silence Cutter popup.
    Writes settings.playbackSpeed; the content script treats it as the base
-   speed and scales silence/filler skipping relative to it. */
+   speed and scales silence skipping relative to it. */
 (function () {
   "use strict";
 
