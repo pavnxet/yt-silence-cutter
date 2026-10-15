@@ -208,6 +208,8 @@
       .legend b { color: var(--text); }
       .stat { margin-top: 14px; text-align: center; font-size: 12px; color: var(--text-3); }
       .stat b { color: var(--accent); }
+      .statsBtn { margin-top: 14px; width: 100%; border: 1px solid var(--accent); border-radius: var(--radius); padding: 10px; font: 600 13px var(--font-body); color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-hover)); cursor: pointer; transition: 0.15s; }
+      .statsBtn:hover { filter: brightness(1.05); }
       .credit { margin-top: 10px; text-align: center; font-size: 11px; color: var(--text-3); }
       .credit b { color: var(--accent); font-weight: 600; }
       [hidden] { display: none !important; }
@@ -277,9 +279,12 @@
 
       <div class="stat"><span id="statSaved">Time saved · 0s</span></div>
 
+      <button class="statsBtn" id="openStats">View full stats →</button>
+
       <div class="credit">Made by <b>pavnxet</b></div>
     </div>
 
+    <script src="/chunks/nav.js"></script>
     <script src="/chunks/speed.js"></script>
     <script src="/chunks/wave.js"></script>
   </body>

@@ -1,0 +1,116 @@
+<!-- YT Silence Cutter · stats page · Author: Pavneet Singh (pavnxet) · MIT License
+     https://github.com/pavnxet/yt-silence-cutter -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Silence Cutter — Stats</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #FAF9F5; --surface: #FFFFFF; --surface-2: #F5F4EE;
+        --border: #E8E6DF; --border-strong: #D9D6CC;
+        --text: #1F1E1D; --text-2: #575653; --text-3: #87867F;
+        --accent: #D97757; --accent-hover: #C15F3C; --accent-soft: #F6E8E1; --accent-ink: #8A3F24;
+        --radius: 10px; --radius-md: 14px; --radius-lg: 20px;
+        --font-heading: "Copernicus", "Tiempos Headline", "Source Serif 4", "Fraunces", Georgia, serif;
+        --font-body: "Styrene B", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --shadow-sm: 0 2px 6px rgba(31, 30, 29, 0.06);
+        --shadow-md: 0 6px 20px rgba(31, 30, 29, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 400 15px/1.6 var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 900px; margin: 0 auto; padding: 40px 24px 64px; }
+      .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+      .mark {
+        width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+        background: linear-gradient(135deg, #DE9476, #C15F3C); box-shadow: var(--shadow-sm);
+      }
+      .brand b { font-family: var(--font-heading); font-size: 17px; font-weight: 500; }
+      h1 { font-family: var(--font-heading); font-size: 40px; font-weight: 500; letter-spacing: -0.02em; margin: 0 0 6px; }
+      .sub { color: var(--text-2); margin: 0 0 30px; max-width: 60ch; }
+      .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+      .card {
+        background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+        padding: 18px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;
+      }
+      .card.hero { grid-column: span 3; background: linear-gradient(135deg, #FBF1EC, #F6E8E1); border-color: #EFD3C6; }
+      .card .k { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-3); }
+      .card .v { font-family: var(--font-heading); font-size: 30px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+      .card.hero .v { font-size: 52px; color: var(--accent-ink); }
+      .card .d { font-size: 12px; color: var(--text-3); }
+      .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm); }
+      .panel h2 { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin: 0 0 16px; }
+      .chart { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 8px; }
+      .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; }
+      .bar {
+        width: 100%; border-radius: 5px 5px 2px 2px;
+        background: linear-gradient(180deg, #DE9476, #C15F3C);
+        min-height: 2px; transition: height 0.3s ease;
+      }
+      .bar.zero { background: var(--border-strong); }
+      .lab { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+      .empty { margin-top: 16px; color: var(--text-2); font-size: 14px; text-align: center; padding: 24px; }
+      footer { display: flex; align-items: center; justify-content: space-between; margin-top: 32px; color: var(--text-3); font-size: 13px; }
+      footer b { color: var(--accent); font-weight: 600; }
+      #reset {
+        border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2);
+        border-radius: var(--radius); padding: 8px 14px; font: 600 13px var(--font-body); cursor: pointer; transition: 0.15s;
+      }
+      #reset:hover { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }
+      @media (max-width: 620px) { .cards { grid-template-columns: 1fr 1fr; } .card.hero { grid-column: span 2; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand">
+        <span class="mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M3 12h3l2-6 3 14 3-9 2 3h5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <b>YT Silence Cutter</b>
+      </div>
+
+      <h1>Your stats</h1>
+      <p class="sub">Everything here is stored locally in your browser and never leaves it.</p>
+
+      <section class="cards">
+        <div class="card hero">
+          <span class="k">Time saved</span>
+          <span class="v" id="vSaved">0s</span>
+          <span class="d">across every video you've watched</span>
+        </div>
+        <div class="card"><span class="k">Silence skipped</span><span class="v" id="vSilence">0s</span></div>
+        <div class="card"><span class="k">Videos processed</span><span class="v" id="vVideos">0</span></div>
+        <div class="card"><span class="k">Sessions</span><span class="v" id="vSessions">0</span></div>
+        <div class="card"><span class="k">Saved today</span><span class="v" id="vToday">0s</span></div>
+        <div class="card"><span class="k">Saved this week</span><span class="v" id="vWeek">0s</span></div>
+        <div class="card"><span class="k">Avg skip speed</span><span class="v" id="vBoost">—</span></div>
+      </section>
+
+      <section class="panel">
+        <h2>Last 14 days</h2>
+        <div class="chart" id="chart"></div>
+        <p class="empty" id="empty" hidden>No activity recorded yet — play a video with skipping on and your stats will appear here.</p>
+      </section>
+
+      <footer>
+        <span>Made by <b>pavnxet</b></span>
+        <button id="reset">Reset stats</button>
+      </footer>
+    </div>
+
+    <script src="/chunks/stats-core.js"></script>
+    <script src="/chunks/stats.js"></script>
+  </body>
+</html>
