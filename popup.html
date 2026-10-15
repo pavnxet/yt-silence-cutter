@@ -280,6 +280,10 @@
           <label>Sensitivity <span class="val" id="threshVal">-45 dB</span></label>
           <input type="range" id="thresh" min="-60" max="-25" step="1">
         </div>
+        <div class="field">
+          <label>Speech guard <span class="val" id="guardVal">150 ms</span></label>
+          <input type="range" id="guard" min="0" max="600" step="10">
+        </div>
       </div>
 
       <div class="stat"><span id="statSaved">Time saved · 0s</span></div>
@@ -291,6 +295,7 @@
 
     <script src="/chunks/nav.js"></script>
     <script src="/chunks/speed.js"></script>
+    <script src="/chunks/guard.js"></script>
     <script src="/chunks/curve-core.js"></script>
     <script src="/chunks/wave.js"></script>
   </body>

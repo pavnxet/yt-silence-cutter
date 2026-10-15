@@ -31,6 +31,7 @@ Firefox: load `manifest.json` via `about:debugging` → *This Firefox* → *Load
 - **Playback speed** sets your base speed.
 - **Silence boost** multiplies that base while skipping (e.g. base 1.5× with a 4× boost skips silence at 6×).
 - **Sensitivity** is the loudness threshold (in dB) below which audio counts as silence.
+- **Speech guard** leaves a margin of untouched audio around speech, so a high skip speed doesn't clip word onsets.
 - **View full stats** opens the analytics page.
 
 ## Stats
@@ -42,6 +43,16 @@ Everything is stored locally in `chrome.storage.local` and never leaves your bro
 - **Last 14 days** — a per-day bar chart.
 
 How "time saved" is calculated: playing `wall` ms of wall-clock silence at a rate `boost` times your base speed covers `wall × boost` ms of content and takes `wall` ms instead of `wall × boost` ms — so the saving is `wall × (boost − 1)` ms. Because the skip rate is `base × boost`, this figure is independent of the base speed. See `chunks/stats-core.js`.
+
+## How the speech guard works
+
+At a high skip speed the detector can overshoot into the start of a word: 50 ms of real time at 8x is 400 ms of content, so by the time a frame notices speech it has already fast-forwarded through it. The **speech guard** (`chunks/guard-core.js`) leaves a margin on both sides of speech:
+
+- **lead-in** — quiet must last `minSilenceMs` before the fast-forward starts, so the tail of the previous word is safe;
+- **lead-out** — the fast-forward is released on a *quieter* threshold than the one that started it (`exitGuardDb` dB below), so it lets go before the level actually reaches speech;
+- **onset** — a sharp rise in level over a short window releases it at once, catching a word's leading edge.
+
+The lead-out is approximate by design: in real time there is no way to know speech is coming, so the guard exits early rather than late. On top of that, the sampling interval shrinks as the skip speed rises, so the detector sees roughly a constant amount of *content* per frame (about 100 ms) instead of ballooning at high speed. Set **Speech guard** to 0 ms for the old behaviour.
 
 ## How the live graph stays smooth
 
@@ -56,6 +67,7 @@ No build step. The extension is plain HTML/CSS/JS. Pure logic lives in two testa
 - `chunks/stats-core.js` — analytics maths
 - `chunks/smooth-core.js` — the audio smoothing filter
 - `chunks/curve-core.js` — waveform interpolation
+- `chunks/guard-core.js` — the speech guard
 
 Both run unchanged in the browser and under Node. Run the suites with:
 
@@ -63,6 +75,8 @@ Both run unchanged in the browser and under Node. Run the suites with:
 node tests/stats.test.js
 node tests/smooth.test.js
 node tests/curve.test.js
+node tests/guard.test.js
+node tests/engine.test.js   # needs Chromium; skips if absent
 ```
 
 ## Permissions
@@ -82,6 +96,8 @@ chunks/
   stats-core.js          analytics maths (pure, tested)
   smooth-core.js         audio smoothing filter (pure, tested)
   curve-core.js          waveform interpolation (pure, tested)
+  guard-core.js          speech guard (pure, tested)
+  guard.js               popup speech-guard control
   stats.js               stats page renderer
   wave.js                popup live-audio visualiser
   speed.js               popup playback-speed control
