@@ -47,11 +47,12 @@ function speechSignal() {
 /* ------------------------------------------------------------------ */
 section("paramsFor — maps the ms slider to exit sensitivity");
 eq(G.paramsFor(0), { exitGuardDb: 0, riseDb: Infinity, riseWindowMs: 90 }, "0 ms disables the guard");
-eq(G.paramsFor(150).exitGuardDb, 6, "150 ms -> 6 dB");
-eq(G.paramsFor(300).exitGuardDb, 12, "300 ms -> 12 dB");
+eq(G.paramsFor(150).exitGuardDb, 4, "150 ms -> 4 dB");
+eq(G.paramsFor(300).exitGuardDb, 8, "300 ms -> 8 dB");
 eq(G.paramsFor(600).exitGuardDb, 12, "600 ms capped at 12 dB");
+ok(G.paramsFor(150).exitGuardDb < G.paramsFor(300).exitGuardDb && G.paramsFor(300).exitGuardDb < G.paramsFor(600).exitGuardDb, "the slider spans its whole range");
 eq(G.paramsFor(50).exitGuardDb, 3, "small guard floored at 3 dB");
-eq(G.paramsFor(undefined).exitGuardDb, 6, "undefined defaults to 150 ms");
+eq(G.paramsFor(undefined).exitGuardDb, 4, "undefined defaults to 150 ms");
 ok(G.paramsFor(150).riseDb < Infinity, "guard arms the onset detector");
 
 section("lead-in — quiet must persist before boosting");

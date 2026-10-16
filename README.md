@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.8.1
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.9.0
 
 ---
 
@@ -21,7 +21,7 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 - **Relative skipping** — silence and speech are both scaled from the base, so boosting to 1.5× and skipping at 6× behaves sensibly.
 
 ### Live audio view (popup)
-- **Real-time waveform** — speech vs. silence as it plays, colour-coded in the brand palette.
+- **Real-time waveform** — shows what the extension is actually doing, in three shades: **speech** (played at base speed), **skipped** (being fast-forwarded) and **guard** (quiet, but left alone by the speech guard).
 - **Smooth motion** — the window slides on a continuous clock and bar heights are interpolated between samples, so it animates at 60 fps rather than stepping one bar per message.
 - **Live legend** — shows the effective speech and silence rates.
 - **Time-saved readout** — running total for the current session.
@@ -101,7 +101,9 @@ At a high skip speed the detector can overshoot into the start of a word: 50 ms 
 - **lead-out** — the fast-forward is released on a *quieter* threshold than the one that started it, so it lets go before the level actually reaches speech;
 - **onset** — a sharp rise in level over a short window releases it at once, catching a word's leading edge.
 
-The lead-out is approximate by design: in real time there is no way to know speech is coming, so the guard exits early rather than late. On top of that, the sampling interval shrinks as the skip speed rises, so the detector sees roughly a constant amount of *content* per frame (about 100 ms) instead of ballooning at high speed.
+The lead-out is approximate by design: in real time there is no way to know speech is coming, so the guard exits early rather than late.
+
+The bigger lever is the sampling rate. The detector samples on a fixed schedule, but the *content* it can miss grows with the skip speed — 13 ms of real time is 104 ms of content at 8×. The interval therefore shrinks as the speed rises (down to 4 ms), so it sees roughly a constant ~40 ms of content per frame. Measured against a 150 ms word onset, that takes the fast-forwarded overshoot from about **120 ms at 8× down to about 40 ms**, roughly flat across speeds.
 
 ---
 

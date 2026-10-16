@@ -16,7 +16,7 @@ function ok(c, l) { eq(!!c, true, l); }
 function near(a, e, tol, l) { eq(Math.abs(a - e) <= tol, true, l + " (" + a.toFixed(4) + " ≈ " + e + ")"); }
 function section(t) { console.log("\n" + t); }
 
-function sample(t, level, speech) { return { t: t, level: level, speech: !!speech }; }
+function sample(t, level, kind) { return { t: t, level: level, kind: kind == null ? 0 : kind }; }
 
 /* ------------------------------------------------------------------ */
 section("clamp01");
@@ -57,12 +57,16 @@ for (var j = 0; j < 100; j++) {
   near(C.levelAt(many, j * 60), (j % 10) / 10, 1e-9, "exact sample " + j);
 }
 
-section("kindAt");
-var s4 = [sample(0, 0, false), sample(100, 1, true)];
-eq(C.kindAt(s4, 10), false, "before the speech sample -> silence");
-eq(C.kindAt(s4, 100), true, "at the speech sample -> speech");
-eq(C.kindAt(s4, 200), true, "after -> holds last");
-eq(C.kindAt([], 0), false, "empty -> silence");
+section("kindAt — 0 protected, 1 speech, 2 skipped");
+var s4 = [sample(0, 0, 0), sample(100, 1, 1)];
+eq(C.kindAt(s4, 10), 0, "before the speech sample -> protected");
+eq(C.kindAt(s4, 100), 1, "at the speech sample -> speech");
+eq(C.kindAt(s4, 200), 1, "after -> holds last");
+eq(C.kindAt([], 0), 0, "empty -> protected (default)");
+eq(C.kindAt([], 0, 2), 2, "empty honours the fallback");
+var s4b = [sample(0, 0, 0), sample(100, 0, 2), sample(200, 1, 1)];
+eq(C.kindAt(s4b, 150), 2, "skipped region reads as skipped");
+eq(C.kindAt(s4b, 250), 1, "back to speech");
 
 section("prune");
 var s5 = [sample(0, 0), sample(100, 0), sample(200, 0), sample(300, 0)];

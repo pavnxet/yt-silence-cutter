@@ -34,7 +34,7 @@
     var g = num(guardMs, 150);
     if (g <= 0) return { exitGuardDb: 0, riseDb: Infinity, riseWindowMs: 90 };
     return {
-      exitGuardDb: Math.max(3, Math.min(12, Math.round(g / 25))),
+      exitGuardDb: Math.max(3, Math.min(12, Math.round(g / 40))),
       riseDb: 8,
       riseWindowMs: 90
     };

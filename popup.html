@@ -204,7 +204,8 @@
         vertical-align: -1px;
       }
       .legend .speech { background: linear-gradient(135deg, var(--accent), var(--accent-hover)); }
-      .legend .silence { background: var(--border-strong); }
+      .legend .skipped { background: #B0AC9F; }
+      .legend .guard { background: #DFDCD1; }
       .legend b { color: var(--text); }
       .stat { margin-top: 14px; text-align: center; font-size: 12px; color: var(--text-3); }
       .stat b { color: var(--accent); }
@@ -262,8 +263,9 @@
         </div>
         <canvas id="wave" width="528" height="192"></canvas>
         <div class="legend">
-          <span><i class="speech"></i>Speech · <b id="speechRate">1×</b></span>
-          <span><i class="silence"></i>Silence · <b id="silenceRate">4×</b></span>
+          <span><i class="speech"></i>Speech <b id="speechRate">1×</b></span>
+          <span><i class="skipped"></i>Skipped <b id="silenceRate">4×</b></span>
+          <span><i class="guard"></i>Guard</span>
         </div>
       </div>
 

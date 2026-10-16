@@ -52,13 +52,15 @@
     return clamp01(a.level + (b.level - a.level) * p);
   }
 
-  /* Colour class at t — the nearest preceding sample decides it. */
-  function kindAt(samples, t) {
-    if (!samples || !samples.length) return false;
+  /* Colour class at t — the nearest preceding sample decides it.
+     0 = protected quiet, 1 = speech, 2 = skipped quiet. */
+  function kindAt(samples, t, fallback) {
+    var fb = fallback == null ? 0 : fallback;
+    if (!samples || !samples.length) return fb;
     var last = samples.length - 1;
-    if (t <= samples[0].t) return !!samples[0].speech;
-    if (t >= samples[last].t) return !!samples[last].speech;
-    return !!samples[indexBefore(samples, t)].speech;
+    if (t <= samples[0].t) return samples[0].kind;
+    if (t >= samples[last].t) return samples[last].kind;
+    return samples[indexBefore(samples, t)].kind;
   }
 
   /* Drop samples older than cutoff (in place). Returns how many went. */
