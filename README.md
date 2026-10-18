@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.9.0
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.9.1
 
 ---
 
@@ -98,12 +98,16 @@ Stored locally in `chrome.storage.local` under the `stats` key and never sent an
 At a high skip speed the detector can overshoot into the start of a word: 50 ms of real time at 8× is 400 ms of content, so by the time a frame notices speech it has already fast-forwarded through it. The speech guard (`chunks/guard-core.js`) attacks this three ways:
 
 - **lead-in** — quiet must last `minSilenceMs` before the fast-forward starts, so the tail of the previous word is safe;
-- **lead-out** — the fast-forward is released on a *quieter* threshold than the one that started it, so it lets go before the level actually reaches speech;
-- **onset** — a sharp rise in level over a short window releases it at once, catching a word's leading edge.
+- **release at the silence line** — the boost is released only once the level actually reaches your **Sensitivity** line; anything still quieter than that line keeps being skipped;
+- **onset** — a rise of `riseDb` dB above the recent quiet floor, and clearly above it, releases the boost early to catch a word's leading edge.
+
+Releasing only at the silence line is deliberate. An earlier design released a few dB *below* the line, which meant a level between the two counted as both "quiet enough to start" and "loud enough to stop" — so a brief sound inside a long silence broke the skip into 2–3 second chunks. That is fixed: a 10 dB blip inside a 12-second silence no longer interrupts it, which the guard test suite now asserts directly.
 
 The lead-out is approximate by design: in real time there is no way to know speech is coming, so the guard exits early rather than late.
 
-The bigger lever is the sampling rate. The detector samples on a fixed schedule, but the *content* it can miss grows with the skip speed — 13 ms of real time is 104 ms of content at 8×. The interval therefore shrinks as the speed rises (down to 4 ms), so it sees roughly a constant ~40 ms of content per frame. Measured against a 150 ms word onset, that takes the fast-forwarded overshoot from about **120 ms at 8× down to about 40 ms**, roughly flat across speeds.
+The bigger lever is the sampling rate. The detector samples on a fixed schedule, but the *content* it can miss grows with the skip speed — 13 ms of real time is 104 ms of content at 8×. The interval therefore shrinks as the speed rises (down to 4 ms), so it sees roughly a constant ~40 ms of content per frame. Measured against a 150 ms word onset, that takes the fast-forwarded overshoot from about **120 ms at 8× down to about 70 ms**, roughly flat across speeds.
+
+There is a real trade-off here, and the guard resolves it toward continuity. Releasing earlier (below the silence line) buys a slightly smaller overshoot — around 40 ms — but is exactly what caused long silences to break into chunks. Continuity wins: a stutter mid-silence is far more noticeable than a 9 ms-long clip at the very start of a word.
 
 ---
 

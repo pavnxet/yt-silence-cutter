@@ -38,7 +38,7 @@ function harness(guardMs) {
     '<!DOCTYPE html><html><head><meta charset="utf-8"><title>x</title></head><body>',
     '<script>',
     'window.__log=[];',
-    'function dbAt(t){ if(t<2000) return -60; if(t<2200) return -60 + 40*(t-2000)/200; return -20; }',
+    'function dbAt(t){ if(t<2000) return -70; if(t<2200) return -70 + 50*(t-2000)/200; return -20; }',
     'window.AudioContext=function(){ return {',
     '  state:"running", resume:function(){return Promise.resolve();}, destination:{},',
     '  createMediaElementSource:function(v){ return {connect:function(){}}; },',
@@ -104,7 +104,7 @@ if (guarded && bare) {
   ok(bare.FIRSTBASE < 2200, "unguarded: stops before full speech too (" + bare.FIRSTBASE + ")");
   ok(guarded.FIRSTBASE < bare.FIRSTBASE,
      "guard releases earlier than no guard (" + guarded.FIRSTBASE + "ms vs " + bare.FIRSTBASE + "ms)");
-  ok(bare.FIRSTBASE - guarded.FIRSTBASE >= 10,
+  ok(bare.FIRSTBASE - guarded.FIRSTBASE >= 15,
      "guard buys real lead (" + (bare.FIRSTBASE - guarded.FIRSTBASE) + "ms)");
 }
 

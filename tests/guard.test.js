@@ -15,96 +15,108 @@ function ok(c, l) { eq(!!c, true, l); }
 function section(t) { console.log("\n" + t); }
 
 var THR = -45;
+var opt = { enterMs: 350, riseDb: G.paramsFor(150).riseDb, riseWindowMs: 90, floorMarginDb: 3 };
 
-/* Drive a guard over a dB signal sampled every `frameMs`. Returns the last
-   time the boost was on. */
-function lastBoost(signal, opts, frameMs) {
-  var g = G.create(), last = -1;
-  for (var i = 0; i < signal.length; i++) {
-    if (g.step(signal[i], THR, i * frameMs, opts).boost) last = i * frameMs;
-  }
-  return last;
-}
-function firstBoost(signal, opts, frameMs) {
+function firstBoost(sig, o, frameMs) {
   var g = G.create();
-  for (var i = 0; i < signal.length; i++) {
-    if (g.step(signal[i], THR, i * frameMs, opts).boost) return i * frameMs;
-  }
+  for (var i = 0; i < sig.length; i++) if (g.step(sig[i], THR, i * frameMs, o).boost) return i * frameMs;
   return -1;
 }
+function lastBoost(sig, o, frameMs) {
+  var g = G.create(), last = -1;
+  for (var i = 0; i < sig.length; i++) if (g.step(sig[i], THR, i * frameMs, o).boost) last = i * frameMs;
+  return last;
+}
+function flips(sig, o, frameMs) {
+  var g = G.create(), prev = false, n = 0;
+  for (var i = 0; i < sig.length; i++) {
+    var b = g.step(sig[i], THR, i * frameMs, o).boost;
+    if (b !== prev) n++;
+    prev = b;
+  }
+  return n;
+}
+function hold(sig, level, frameMs) { for (var i = 0; i < sig.length; i++) sig.push(level); return sig; }
+function repeat(sig, level, ms, frameMs) { for (var i = 0; i < ms / frameMs; i++) sig.push(level); return sig; }
 
-/* silence -> consonant ramp -> speech */
-function speechSignal() {
+/* ------------------------------------------------------------------ */
+section("paramsFor — maps the ms slider to onset sensitivity");
+eq(G.paramsFor(0), { riseDb: Infinity, riseWindowMs: 90, floorMarginDb: 0 }, "0 ms disables the onset detector");
+eq(G.paramsFor(150).riseDb, 13, "150 ms -> 13 dB");
+eq(G.paramsFor(300).riseDb, 12, "300 ms -> 12 dB");
+eq(G.paramsFor(600).riseDb, 11, "600 ms -> 11 dB (still tolerant)");
+eq(G.paramsFor(undefined).riseDb, 13, "undefined defaults to 150 ms");
+ok(G.paramsFor(150).riseDb >= 11 && G.paramsFor(600).riseDb >= 11, "every setting tolerates an 11 dB blip");
+eq(G.paramsFor(150).floorMarginDb, 3, "onset must clear the floor");
+
+section("lead-in — quiet must persist before boosting");
+var quiet = hold([], -60, 10);
+repeat(quiet, -60, 3000, 10);
+eq(firstBoost(quiet, opt, 10), 350, "boost starts exactly after enterMs");
+
+section("short quiet does not boost");
+var shortQ = [];
+repeat(shortQ, -60, 200, 10); repeat(shortQ, -20, 800, 10);
+eq(firstBoost(shortQ, opt, 10), -1, "200 ms of quiet is below the 350 ms lead-in");
+
+section("release — reaching the silence line");
+var g1 = G.create();
+for (var a = 0; a <= 360; a += 10) g1.step(-60, THR, a, opt);
+eq(g1.step(-60, THR, 370, opt).boost, true, "boosting after the lead-in");
+eq(g1.step(-44, THR, 380, opt).boost, false, "a frame above the silence line releases it");
+
+section("no release below the silence line (the chunking fix)");
+var g2 = G.create();
+for (var b = 0; b <= 360; b += 10) g2.step(-60, THR, b, opt);
+eq(g2.step(-50, THR, 370, opt).boost, true, "-50 is still below the line, so it keeps skipping");
+eq(g2.step(-48, THR, 380, opt).boost, true, "-48 is below both the line and the onset threshold, so it keeps skipping");
+
+section("release — on a genuine onset (a big rise above the floor)");
+var g3 = G.create();
+for (var c = 0; c <= 360; c += 10) g3.step(-60, THR, c, opt);
+eq(g3.step(-59, THR, 370, opt).boost, true, "still quiet");
+eq(g3.step(-42, THR, 380, opt).boost, false, "an 18 dB rise releases it even before the line");
+
+section("reset");
+var g4 = G.create();
+for (var d = 0; d <= 360; d += 10) g4.step(-60, THR, d, opt);
+eq(g4.isBoosting(), true, "boosting before reset");
+g4.reset();
+eq(g4.isBoosting(), false, "reset clears the boost");
+
+/* The headline behaviour: a long silence with brief sounds inside it must not
+   be broken into chunks. */
+section("behaviour — a long silence with periodic brief sounds stays one run");
+function blipSignal(floorDb, blipDb, blipMs, everyMs, totalMs, frameMs) {
   var sig = [];
-  for (var t = 0; t < 2600; t += 10) {
-    if (t < 2000) sig.push(-60);
-    else if (t < 2200) sig.push(-60 + 40 * (t - 2000) / 200);
-    else sig.push(-20);
+  repeat(sig, -25, 1000, frameMs);                       // speech first
+  var t = 0;
+  while (t < totalMs) {
+    repeat(sig, blipDb, blipMs, frameMs);
+    t += blipMs;
+    var gap = Math.min(everyMs - blipMs, totalMs - t);
+    repeat(sig, floorDb, gap, frameMs);
+    t += gap;
   }
   return sig;
 }
+var blips = blipSignal(-58, -48, 300, 2500, 12000, 5);   // 10 dB above the floor
+eq(flips(blips, opt, 5), 1, "one single boost run (no chunking)");
+ok(lastBoost(blips, opt, 5) > 10000, "the boost runs to the end of the silence");
 
-/* ------------------------------------------------------------------ */
-section("paramsFor — maps the ms slider to exit sensitivity");
-eq(G.paramsFor(0), { exitGuardDb: 0, riseDb: Infinity, riseWindowMs: 90 }, "0 ms disables the guard");
-eq(G.paramsFor(150).exitGuardDb, 4, "150 ms -> 4 dB");
-eq(G.paramsFor(300).exitGuardDb, 8, "300 ms -> 8 dB");
-eq(G.paramsFor(600).exitGuardDb, 12, "600 ms capped at 12 dB");
-ok(G.paramsFor(150).exitGuardDb < G.paramsFor(300).exitGuardDb && G.paramsFor(300).exitGuardDb < G.paramsFor(600).exitGuardDb, "the slider spans its whole range");
-eq(G.paramsFor(50).exitGuardDb, 3, "small guard floored at 3 dB");
-eq(G.paramsFor(undefined).exitGuardDb, 4, "undefined defaults to 150 ms");
-ok(G.paramsFor(150).riseDb < Infinity, "guard arms the onset detector");
+var louder = blipSignal(-58, -44, 300, 2500, 12000, 5);  // above the silence line
+ok(flips(louder, opt, 5) > 1, "a sound above the silence line DOES break the run (correct)");
 
-section("lead-in — quiet must persist before boosting");
-var quiet = [];
-for (var q = 0; q < 3000; q += 10) quiet.push(-60);
-var opt = { enterMs: 350, exitGuardDb: 6, riseDb: 8, riseWindowMs: 90 };
-eq(firstBoost(quiet, opt, 10), 350, "boost starts exactly after enterMs");
-eq(firstBoost(quiet, { enterMs: 350, exitGuardDb: 0, riseDb: Infinity, riseWindowMs: 90 }, 10), 350, "lead-in unaffected by the exit guard");
-
-section("short quiet does not boost");
-var shortQuiet = [];
-for (var s = 0; s < 1000; s += 10) shortQuiet.push(s < 200 ? -60 : -20);
-eq(firstBoost(shortQuiet, opt, 10), -1, "200 ms of quiet is below the 350 ms lead-in");
-
-section("exit — immediate when the level reaches the threshold");
-var g1 = G.create();
-eq(g1.step(-60, THR, 0, opt).boost, false, "quiet, not boosting yet");
-for (var a = 10; a <= 350; a += 10) g1.step(-60, THR, a, opt);
-eq(g1.step(-60, THR, 360, opt).boost, true, "boosting after the lead-in");
-eq(g1.step(-44, THR, 370, opt).boost, false, "a frame above the threshold stops it");
-
-section("exit — early, on the quieter guard threshold");
-var g2 = G.create();
-for (var b = 0; b <= 360; b += 10) g2.step(-60, THR, b, opt);
-eq(g2.step(-50, THR, 370, opt).boost, false, "-50 (below threshold, above guard) already releases");
-var g3 = G.create();
-for (var c = 0; c <= 360; c += 10) g3.step(-60, THR, c, opt);
-eq(g3.step(-55, THR, 370, opt).boost, true, "-55 is below the guard threshold and a small change, so still boosting");
-
-section("exit — on a sharp rise (word onset)");
-var g4 = G.create();
-for (var d = 0; d <= 360; d += 10) g4.step(-60, THR, d, opt);
-eq(g4.step(-59, THR, 370, opt).boost, true, "still quiet");
-var st = g4.step(-52, THR, 380, opt);   // +7 dB in one frame, and above the guard
-eq(st.boost, false, "a sudden rise releases the boost");
-
-section("reset");
-var g5 = G.create();
-for (var e = 0; e <= 360; e += 10) g5.step(-60, THR, e, opt);
-eq(g5.isBoosting(), true, "boosting before reset");
-g5.reset();
-eq(g5.isBoosting(), false, "reset clears the boost");
-
-/* The headline behaviour: the guard must end the fast-forward earlier. */
-section("behaviour — the guard ends the boost earlier on a speech onset");
-var sig = speechSignal();
-var withGuard = lastBoost(sig, opt, 10);
-var noGuard = lastBoost(sig, { enterMs: 350, exitGuardDb: 0, riseDb: Infinity, riseWindowMs: 90 }, 10);
-ok(withGuard < noGuard, "guard releases earlier (" + withGuard + "ms vs " + noGuard + "ms)");
-ok(withGuard < 2200, "guard never boosts into full speech (" + withGuard + " < 2200)");
-ok(noGuard <= 2200, "unguarded also stops before full speech here (" + noGuard + ")");
-ok(noGuard - withGuard >= 10, "guard buys at least 10ms of lead (" + (noGuard - withGuard) + "ms)");
+section("behaviour — the guard still releases before a word arrives");
+function onsetSignal() {
+  var sig = [];
+  repeat(sig, -58, 2000, 10);
+  for (var i = 0; i < 15; i++) sig.push(-58 + 40 * i / 15);
+  repeat(sig, -20, 1000, 10);
+  return sig;
+}
+var on = onsetSignal();
+ok(lastBoost(on, opt, 10) < 2200, "released before full speech (" + lastBoost(on, opt, 10) + "ms)");
 
 console.log("\n" + (fail === 0 ? "PASS" : "FAIL") + " — " + pass + " passed, " + fail + " failed");
 process.exit(fail === 0 ? 0 : 1);
