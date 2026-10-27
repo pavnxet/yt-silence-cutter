@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.9.1
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.10.0
 
 ---
 
@@ -16,7 +16,8 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 - **Works on any site** — the skip is generic HTML5-video logic, not YouTube-specific. Multiple videos on a page are handled, and each keeps its own skip state so they don't interfere.
 
 ### Playback speed
-- **Manual base speed** — set 0.5×–4× in the popup.
+- **Manual base speed** — set 0.25×–4× in the popup.
+- **Custom values** — every slider has a number box beside it, so you can type an exact value (1.37×, 5.25×, −47.5 dB, 175 ms) instead of being stuck on the slider's steps. Typed values are clamped to a safe range and saved like any other change.
 - **Adopts your choice** — change the speed on the site itself (e.g. YouTube's menu) and the extension takes that as the new base instead of fighting it.
 - **Relative skipping** — silence and speech are both scaled from the base, so boosting to 1.5× and skipping at 6× behaves sensibly.
 
@@ -60,10 +61,12 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 | Control | What it does | Default | Range |
 |---|---|---|---|
 | **Skip silence** | Master on/off | On | on / off |
-| **Playback speed** | Your base speed | 1× | 0.5× – 4× |
-| **Silence boost** | Multiplier applied to the base while skipping | 4× | 2× – 8× |
-| **Sensitivity** | Loudness below which audio is "silence" | −45 dB | −60 – −25 dB |
-| **Speech guard** | Untouched margin around speech | 150 ms | 0 – 600 ms |
+| **Playback speed** | Your base speed | 1× | 0.25× – 4× |
+| **Silence boost** | Multiplier applied to the base while skipping | 4× | 1× – 10× |
+| **Sensitivity** | Loudness below which audio is "silence" | −45 dB | −80 – −10 dB |
+| **Speech guard** | Untouched margin around speech | 150 ms | 0 – 2000 ms |
+
+Each row's value is a **number box** — click it and type an exact value. Anything outside the range is clamped, and a non-number is rejected (the box snaps back to the current value).
 | **View full stats** | Opens the analytics page | — | — |
 
 A worked example: base **1.5×** with a **4×** boost plays silence at **6×** and speech at **1.5×**.
@@ -82,6 +85,8 @@ All settings live in `chrome.storage.local` under the `settings` key:
 | `thresholdDb` | Silence threshold (dB) | `-45` |
 | `guardMs` | Speech-guard margin (ms) | `150` |
 | `minSilenceMs` | Quiet must last this long before boosting | `350` |
+
+The effective skip rate is `playbackSpeed × silenceSpeed`, which is capped at **16×** (the browser's ceiling for `playbackRate`) — so a 4× base with a 10× boost plays silence at 16×, not 40×.
 
 ---
 
@@ -157,6 +162,7 @@ No build step — the extension is plain HTML/CSS/JS. The decision-making lives 
 | `chunks/curve-core.js` | Waveform interpolation |
 | `chunks/guard-core.js` | The speech guard state machine |
 | `chunks/stats-core.js` | Analytics maths |
+| `chunks/value-core.js` | Range clamping for custom values |
 
 Run the suites:
 
@@ -165,6 +171,8 @@ node tests/stats.test.js
 node tests/smooth.test.js
 node tests/curve.test.js
 node tests/guard.test.js
+node tests/value.test.js
+node tests/popup.test.js    # types custom values into the real popup in headless Chromium
 node tests/engine.test.js   # runs the real content script in headless Chromium; skips if absent
 ```
 
@@ -184,6 +192,8 @@ chunks/
   smooth-core.js         audio smoothing filter (pure, tested)
   curve-core.js          waveform interpolation (pure, tested)
   guard-core.js          speech guard (pure, tested)
+  value-core.js          custom-value clamping (pure, tested)
+  custom.js              popup number boxes for exact values
   guard.js               popup speech-guard control
   speed.js               popup playback-speed control
   wave.js                popup live-audio visualiser
