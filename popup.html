@@ -119,6 +119,20 @@
         margin-bottom: 7px;
       }
       .field label .val { color: var(--text); font-variant-numeric: tabular-nums; }
+      .num {
+        width: 68px;
+        text-align: right;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+        color: var(--text);
+        font: 600 12px var(--font-body);
+        font-variant-numeric: tabular-nums;
+        padding: 3px 7px;
+      }
+      .num:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+      .num::-webkit-outer-spin-button, .num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      .num { -moz-appearance: textfield; appearance: textfield; }
       input[type="range"] {
         -webkit-appearance: none;
         appearance: none;
@@ -271,20 +285,20 @@
 
       <div class="tune" id="tune">
         <div class="field">
-          <label>Playback speed <span class="val" id="baseVal">1×</span></label>
-          <input type="range" id="base" min="0.5" max="4" step="0.25">
+          <label>Playback speed <input class="num" type="number" id="baseVal" min="0.25" max="4" step="0.01" value="1" aria-label="Playback speed"></label>
+          <input type="range" id="base" min="0.25" max="4" step="0.01">
         </div>
         <div class="field">
-          <label>Silence boost <span class="val" id="speedVal">4×</span></label>
-          <input type="range" id="speed" min="2" max="8" step="0.5">
+          <label>Silence boost <input class="num" type="number" id="speedVal" min="1" max="10" step="0.01" value="4" aria-label="Silence boost"></label>
+          <input type="range" id="speed" min="1" max="10" step="0.01">
         </div>
         <div class="field">
-          <label>Sensitivity <span class="val" id="threshVal">-45 dB</span></label>
-          <input type="range" id="thresh" min="-60" max="-25" step="1">
+          <label>Sensitivity <input class="num" type="number" id="threshVal" min="-80" max="-10" step="0.5" value="-45" aria-label="Sensitivity in dB"></label>
+          <input type="range" id="thresh" min="-80" max="-10" step="0.5">
         </div>
         <div class="field">
-          <label>Speech guard <span class="val" id="guardVal">150 ms</span></label>
-          <input type="range" id="guard" min="0" max="600" step="10">
+          <label>Speech guard <input class="num" type="number" id="guardVal" min="0" max="2000" step="1" value="150" aria-label="Speech guard in milliseconds"></label>
+          <input type="range" id="guard" min="0" max="2000" step="1">
         </div>
       </div>
 
@@ -298,6 +312,8 @@
     <script src="/chunks/nav.js"></script>
     <script src="/chunks/speed.js"></script>
     <script src="/chunks/guard.js"></script>
+    <script src="/chunks/value-core.js"></script>
+    <script src="/chunks/custom.js"></script>
     <script src="/chunks/curve-core.js"></script>
     <script src="/chunks/wave.js"></script>
   </body>
