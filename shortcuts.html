@@ -1,0 +1,133 @@
+<!-- YT Silence Cutter · keyboard shortcuts guide · Author: Pavneet Singh (pavnxet) · MIT License
+     https://github.com/pavnxet/yt-silence-cutter -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Silence Cutter — Keyboard shortcuts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #FAF9F5;
+        --surface: #FFFFFF;
+        --surface-2: #F5F4EE;
+        --border: #E8E6DF;
+        --border-strong: #D9D6CC;
+        --text: #1F1E1D;
+        --text-2: #575653;
+        --text-3: #87867F;
+        --accent: #D97757;
+        --accent-hover: #C15F3C;
+        --accent-soft: #F6E8E1;
+        --accent-ink: #8A3F24;
+        --radius: 10px;
+        --radius-md: 14px;
+        --font-heading: "Copernicus", "Tiempos Headline", Fraunces, Georgia, serif;
+        --font-body: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --shadow-sm: 0 2px 6px rgba(31, 30, 29, 0.06);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 48px 24px 64px;
+        background: var(--bg);
+        color: var(--text);
+        font: 400 15px/1.6 var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      .page { max-width: 720px; margin: 0 auto; }
+      header { margin-bottom: 32px; }
+      .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+      .mark {
+        width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+        background: linear-gradient(135deg, #DE9476, #C15F3C);
+      }
+      .brand b { font-family: var(--font-heading); font-size: 17px; font-weight: 500; }
+      h1 { font-family: var(--font-heading); font-size: 34px; font-weight: 500; margin: 0 0 8px; letter-spacing: -0.01em; }
+      .sub { color: var(--text-2); margin: 0; }
+      .note {
+        margin-top: 20px; padding: 14px 16px; border-radius: var(--radius-md);
+        background: var(--accent-soft); border: 1px solid rgba(217, 119, 87, 0.25);
+        color: var(--accent-ink); font-size: 14px;
+      }
+      .note b { color: var(--accent-ink); }
+      .group { margin-top: 30px; }
+      .group h2 {
+        font-family: var(--font-heading); font-size: 15px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3);
+        margin: 0 0 10px;
+      }
+      .rows { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--surface); box-shadow: var(--shadow-sm); }
+      .row {
+        display: flex; align-items: center; justify-content: space-between; gap: 18px;
+        padding: 13px 16px; border-top: 1px solid var(--border);
+      }
+      .row:first-child { border-top: 0; }
+      .what { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+      .title { color: var(--text); }
+      .delta { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+      .keys { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+      kbd {
+        font: 600 12px var(--font-body);
+        background: var(--surface-2);
+        border: 1px solid var(--border-strong);
+        border-bottom-width: 2px;
+        border-radius: 7px;
+        padding: 3px 8px;
+        color: var(--text);
+        min-width: 24px;
+        text-align: center;
+      }
+      .plus { color: var(--text-3); font-size: 11px; }
+      footer { margin-top: 36px; display: flex; gap: 10px; flex-wrap: wrap; }
+      footer a {
+        text-decoration: none; font: 600 13px var(--font-body);
+        padding: 9px 16px; border-radius: var(--radius);
+        border: 1px solid var(--border); color: var(--text-2); background: var(--surface);
+      }
+      footer a:hover { border-color: var(--accent); color: var(--accent-ink); }
+      footer a.primary { background: linear-gradient(135deg, var(--accent), var(--accent-hover)); border-color: transparent; color: #fff; }
+      .credit { margin-top: 28px; text-align: center; font-size: 12px; color: var(--text-3); }
+      .credit b { color: var(--accent); }
+      @media (max-width: 520px) {
+        .row { flex-direction: column; align-items: flex-start; gap: 8px; }
+      }
+      @media (prefers-reduced-motion: reduce) { * { transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <div class="brand">
+          <span class="mark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M3 12h3l2-6 3 14 3-9 2 3h5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <b>YT Silence Cutter</b>
+        </div>
+        <h1>Keyboard shortcuts</h1>
+        <p class="sub">Every shortcut is <b>Alt + Shift</b> plus one key.</p>
+        <p class="note">
+          <b>Why Alt + Shift?</b> YouTube binds bare keys (<b>k</b>, <b>j</b>, <b>l</b>, space, arrows, <b>0–9</b>) and the
+          browser owns <b>Ctrl</b>/<b>Cmd</b> combinations. Requiring Alt + Shift means these never collide with either —
+          and they are ignored while you are typing in a text box.
+        </p>
+      </header>
+
+      <div id="list"></div>
+
+      <footer>
+        <a class="primary" href="stats.html">View your stats</a>
+        <a href="popup.html">Open the popup</a>
+      </footer>
+
+      <div class="credit">Made by <b>pavnxet</b></div>
+    </div>
+    <script src="/chunks/shortcuts-core.js"></script>
+    <script src="/chunks/shortcuts.js"></script>
+  </body>
+</html>
