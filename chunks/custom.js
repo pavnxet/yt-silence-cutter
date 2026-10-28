@@ -68,12 +68,18 @@
     });
   }
 
+  var lockEl = document.getElementById("lock");
+  if (lockEl) {
+    lockEl.addEventListener("change", function () { save("lockSpeed", lockEl.checked); });
+  }
+
   function applyAll(s) {
-    if (!s) return;
+    s = s || {};
     for (var i = 0; i < FIELDS.length; i++) {
       var f = FIELDS[i];
       if (typeof s[f.key] === "number") paint(f, s[f.key]);
     }
+    if (lockEl) lockEl.checked = s.lockSpeed !== false;
   }
 
   for (var i = 0; i < FIELDS.length; i++) wire(FIELDS[i]);
