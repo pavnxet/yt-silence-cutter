@@ -130,6 +130,8 @@
         font-variant-numeric: tabular-nums;
         padding: 3px 7px;
       }
+      .lockrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .lockrow label { margin: 0; }
       .num:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
       .num::-webkit-outer-spin-button, .num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
       .num { -moz-appearance: textfield; appearance: textfield; }
@@ -299,6 +301,13 @@
         <div class="field">
           <label>Speech guard <input class="num" type="number" id="guardVal" min="0" max="2000" step="1" value="150" aria-label="Speech guard in milliseconds"></label>
           <input type="range" id="guard" min="0" max="2000" step="1">
+        </div>
+        <div class="field lockrow">
+          <label for="lock">Lock playback speed</label>
+          <label class="switch">
+            <input type="checkbox" id="lock" aria-label="Lock playback speed">
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
 
