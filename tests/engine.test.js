@@ -130,6 +130,62 @@ function runHold(lockSpeed) {
   return { during: Number(m[1]), final: Number(m[2]), persisted: Number(m[3]) };
 }
 
+/* Fires real keydown events at the page and checks the extension reacts only
+   to Alt+Shift combinations. */
+function shortcutHarness() {
+  var smooth = fs.readFileSync(path.join(ROOT, "chunks/smooth-core.js"), "utf8");
+  var guard = fs.readFileSync(path.join(ROOT, "chunks/guard-core.js"), "utf8");
+  var sc = fs.readFileSync(path.join(ROOT, "chunks/shortcuts-core.js"), "utf8");
+  var cjs = fs.readFileSync(path.join(ROOT, "content-scripts/content.js"), "utf8");
+  return [
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>x</title></head><body>',
+    S_OPEN,
+    'window.__sets=[];window.__msgs=[];',
+    'window.AudioContext=function(){ return {',
+    '  state:"running", resume:function(){return Promise.resolve();}, destination:{},',
+    '  createMediaElementSource:function(v){ return {connect:function(){}}; },',
+    '  createAnalyser:function(){ return { fftSize:512, connect:function(){},',
+    '    getFloatTimeDomainData:function(buf){ var a=Math.pow(10,-20/20); for(var i=0;i<buf.length;i++) buf[i]=a; } }; }',
+    '};};',
+    'var video=document.createElement("video"); document.body.appendChild(video);',
+    'var _rate=1;',
+    'Object.defineProperty(video,"playbackRate",{get:function(){return _rate;},set:function(v){_rate=v;}});',
+    '["paused","muted","ended"].forEach(function(k){Object.defineProperty(video,k,{get:function(){return false;}});});',
+    'Object.defineProperty(video,"currentSrc",{get:function(){return "stub";}});',
+    'window.chrome={runtime:{id:"t",getURL:function(p){return p;},',
+    '   sendMessage:function(m){window.__msgs.push(m);return Promise.resolve();},onMessage:{addListener:function(){}}},',
+    ' storage:{local:{get:function(k,cb){var d={settings:{enabled:true,playbackSpeed:1,silenceSpeed:8,thresholdDb:-45,minSilenceMs:350,guardMs:150,lockSpeed:true}};var out=k?{[k]:d[k]}:d;if(cb)cb(out);return Promise.resolve(out);},set:function(o){window.__sets.push(JSON.parse(JSON.stringify(o)));return Promise.resolve();}},',
+    ' onChanged:{addListener:function(){},removeListener:function(){}}}};',
+    'function key(code,mods){document.body.dispatchEvent(new KeyboardEvent("keydown",{code:code,altKey:!!mods.alt,shiftKey:!!mods.shift,bubbles:true,cancelable:true}));}',
+    S_CLOSE,
+    S_OPEN + smooth + S_CLOSE,
+    S_OPEN + guard + S_CLOSE,
+    S_OPEN + sc + S_CLOSE,
+    S_OPEN + cjs + S_CLOSE,
+    S_OPEN,
+    'setTimeout(function(){ key("ArrowUp",{alt:true,shift:true}); }, 600);',
+    'setTimeout(function(){ key("ArrowUp",{}); }, 800);',
+    'setTimeout(function(){ key("KeyH",{alt:true,shift:true}); }, 1000);',
+    'setTimeout(function(){',
+    '  var ps=window.__sets.filter(function(o){return o&&o.settings&&("playbackSpeed" in o.settings);});',
+    '  var open=window.__msgs.filter(function(m){return m&&m.type==="yt-silence-cutter:open";});',
+    '  document.title="SC writes="+ps.length+" speed="+(ps.length?ps[0].settings.playbackSpeed:"-")+" opens="+open.length+" page="+(open.length?open[0].page:"-");',
+    '}, 1400);',
+    S_CLOSE,
+    '</body></html>'
+  ].join("\n");
+}
+
+function runShortcut() {
+  var f = path.join(os.tmpdir(), "ysc-shortcut.html");
+  fs.writeFileSync(f, shortcutHarness());
+  var out = cp.execSync(BIN + " --headless=new --no-sandbox --disable-gpu --virtual-time-budget=3000 --dump-dom file://" + f,
+    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
+  var m = out.match(/<title>SC writes=(\d+) speed=([0-9.\-]+) opens=(\d+) page=([a-z.]+)<\/title>/);
+  if (!m) return null;
+  return { writes: Number(m[1]), speed: m[2], opens: Number(m[3]), page: m[4] };
+}
+
 function run(settings) {
   var f = path.join(os.tmpdir(), "ysc-engine-" + JSON.stringify(settings).replace(/[^a-z0-9]/gi, "") + ".html");
   fs.writeFileSync(f, harness(settings));
@@ -195,6 +251,16 @@ if (locked) {
   eq(locked.during, 1, "locked: the external 2x is reverted, rate stays 1x");
   eq(locked.final, 1, "locked: still 1x after release");
   eq(locked.persisted, 0, "locked: nothing persisted");
+}
+
+section("engine — real keystrokes: Alt+Shift acts, bare keys do nothing");
+var sc = runShortcut();
+ok(sc !== null, "shortcut run produced a result");
+if (sc) {
+  eq(sc.writes, 1, "exactly one settings write (the bare ArrowUp was ignored)");
+  eq(sc.speed, "1.05", "Alt+Shift+Up raised the base speed to 1.05");
+  eq(sc.opens, 1, "Alt+Shift+H sent one open request");
+  eq(sc.page, "shortcuts.html", "it asked for the shortcuts guide");
 }
 
 console.log("\n" + (fail === 0 ? "PASS" : "FAIL") + " — " + pass + " passed, " + fail + " failed");
