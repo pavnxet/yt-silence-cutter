@@ -22,6 +22,10 @@ function ok(c, l) {
   if (c) { pass++; console.log("  ok   " + l); }
   else { fail++; console.log("  FAIL " + l); }
 }
+function eq(a, e, label) {
+  if (JSON.stringify(a) === JSON.stringify(e)) { pass++; console.log("  ok   " + label); }
+  else { fail++; console.log("  FAIL " + label + "\n         expected " + JSON.stringify(e) + "\n         got      " + JSON.stringify(a)); }
+}
 function section(t) { console.log("\n" + t); }
 
 function chromeBin() {
@@ -74,6 +78,58 @@ function harness(settings) {
   ].join("\n");
 }
 
+/* A page where a "hold to 2x" happens: the rate is pushed to 2 externally and
+   then released. The extension must neither persist it nor fight it. */
+function holdHarness() {
+  var smooth = fs.readFileSync(path.join(ROOT, "chunks/smooth-core.js"), "utf8");
+  var guard = fs.readFileSync(path.join(ROOT, "chunks/guard-core.js"), "utf8");
+  var cjs = fs.readFileSync(path.join(ROOT, "content-scripts/content.js"), "utf8");
+  return [
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>x</title></head><body>',
+    S_OPEN,
+    'window.__sets=[];',
+    'window.AudioContext=function(){ return {',
+    '  state:"running", resume:function(){return Promise.resolve();}, destination:{},',
+    '  createMediaElementSource:function(v){ return {connect:function(){}}; },',
+    '  createAnalyser:function(){ return { fftSize:512, connect:function(){},',
+    '    getFloatTimeDomainData:function(buf){ var a=Math.pow(10,-20/20); for(var i=0;i<buf.length;i++) buf[i]=a; } }; }',
+    '};};',
+    'var video=document.createElement("video"); document.body.appendChild(video);',
+    'var _rate=1;',
+    'Object.defineProperty(video,"playbackRate",{get:function(){return _rate;},set:function(v){_rate=v;try{video.dispatchEvent(new Event("ratechange"));}catch(e){}}});',
+    '["paused","muted","ended"].forEach(function(k){Object.defineProperty(video,k,{get:function(){return false;}});});',
+    'Object.defineProperty(video,"currentSrc",{get:function(){return "stub";}});',
+    'window.chrome={runtime:{id:"t",getURL:function(p){return p;},sendMessage:function(){return Promise.resolve();},onMessage:{addListener:function(){}}},',
+    ' storage:{local:{get:function(k){var d={settings:{enabled:true,playbackSpeed:1,silenceSpeed:8,thresholdDb:-45,minSilenceMs:350,guardMs:150}};return Promise.resolve(k?{[k]:d[k]}:d);},set:function(o){window.__sets.push(JSON.parse(JSON.stringify(o)));return Promise.resolve();}},',
+    ' onChanged:{addListener:function(){},removeListener:function(){}}}};',
+    S_CLOSE,
+    S_OPEN + smooth + S_CLOSE,
+    S_OPEN + guard + S_CLOSE,
+    S_OPEN + cjs + S_CLOSE,
+    S_OPEN,
+    'var during=null;',
+    'setTimeout(function(){ video.playbackRate=2; }, 800);',
+    'setTimeout(function(){ during=video.playbackRate; }, 1100);',
+    'setTimeout(function(){ video.playbackRate=1; }, 1200);',
+    'setTimeout(function(){',
+    '  var persisted=window.__sets.filter(function(o){return o&&o.settings&&("playbackSpeed" in o.settings);}).length;',
+    '  document.title="HOLD during="+during+" final="+video.playbackRate+" persisted="+persisted;',
+    '}, 2200);',
+    S_CLOSE,
+    '</body></html>'
+  ].join("\n");
+}
+
+function runHold() {
+  var f = path.join(os.tmpdir(), "ysc-hold.html");
+  fs.writeFileSync(f, holdHarness());
+  var out = cp.execSync(BIN + " --headless=new --no-sandbox --disable-gpu --virtual-time-budget=4000 --dump-dom file://" + f,
+    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
+  var m = out.match(/<title>HOLD during=([0-9.]+) final=([0-9.]+) persisted=(\d+)<\/title>/);
+  if (!m) return null;
+  return { during: Number(m[1]), final: Number(m[2]), persisted: Number(m[3]) };
+}
+
 function run(settings) {
   var f = path.join(os.tmpdir(), "ysc-engine-" + JSON.stringify(settings).replace(/[^a-z0-9]/gi, "") + ".html");
   fs.writeFileSync(f, harness(settings));
@@ -121,6 +177,15 @@ ok(hot !== null, "high-setting run produced a result");
 if (hot) {
   ok(hot.MAXRATE <= 16, "max playback rate stays at or below 16x (got " + hot.MAXRATE + "x)");
   ok(hot.MAXRATE > 1, "it still boosted at all (" + hot.MAXRATE + "x)");
+}
+
+section("engine — a temporary 2x hold is neither adopted nor fought");
+var hold = runHold();
+ok(hold !== null, "hold run produced a result");
+if (hold) {
+  eq(hold.during, 2, "the extension leaves YouTube's 2x alone while it is held");
+  eq(hold.final, 1, "after release the rate returns to 1x (not stuck at 2x)");
+  eq(hold.persisted, 0, "no playbackSpeed was written to storage");
 }
 
 console.log("\n" + (fail === 0 ? "PASS" : "FAIL") + " — " + pass + " passed, " + fail + " failed");
