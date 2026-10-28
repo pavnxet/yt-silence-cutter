@@ -3,10 +3,15 @@
    Author: Pavneet Singh (pavnxet) · MIT License */
 (function () {
   "use strict";
-  var btn = document.getElementById("openStats");
-  if (!btn) return;
-  btn.addEventListener("click", function () {
-    chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") });
-    window.close();
-  });
+  function open(id, page) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      chrome.tabs.create({ url: chrome.runtime.getURL(page) });
+      window.close();
+    });
+  }
+
+  open("openStats", "stats.html");
+  open("openShortcuts", "shortcuts.html");
 })();
