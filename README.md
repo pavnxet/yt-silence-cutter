@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.10.0
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.10.1
 
 ---
 
@@ -18,7 +18,7 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 ### Playback speed
 - **Manual base speed** — set 0.25×–4× in the popup.
 - **Custom values** — every slider has a number box beside it, so you can type an exact value (1.37×, 5.25×, −47.5 dB, 175 ms) instead of being stuck on the slider's steps. Typed values are clamped to a safe range and saved like any other change.
-- **Adopts your choice** — change the speed on the site itself (e.g. YouTube's menu) and the extension takes that as the new base instead of fighting it.
+- **Adopts your choice** — change the speed on the site itself (e.g. YouTube's menu) and the extension follows it as the new base for that video. This is **session-only and never saved**, so a temporary speed — YouTube's hold-to-2x, for instance — is neither persisted nor fought, and the video always returns to normal on release.
 - **Relative skipping** — silence and speech are both scaled from the base, so boosting to 1.5× and skipping at 6× behaves sensibly.
 
 ### Live audio view (popup)
