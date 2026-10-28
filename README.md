@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.11.0
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.12.0
 
 ---
 
@@ -17,6 +17,7 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 
 ### Playback speed
 - **Manual base speed** — set 0.25×–4× in the popup.
+- **Keyboard shortcuts** — twelve `Alt + Shift` bindings for every control, plus a built-in guide page. They cannot collide with YouTube's or the browser's shortcuts.
 - **Custom values** — every slider has a number box beside it, so you can type an exact value (1.37×, 5.25×, −47.5 dB, 175 ms) instead of being stuck on the slider's steps. Typed values are clamped to a safe range and saved like any other change.
 - **Lock playback speed** (on by default) — once the extension sets a speed, an outside speed changer can't move it: YouTube's speed menu, its hold-to-2x, or another extension. A change made elsewhere is put straight back, so the video stays on the speed you set.
 - **Adopts your choice when unlocked** — with the lock off, changing the speed on the site becomes the new base for that video. That is session-only and never saved, so a temporary speed is neither persisted nor fought.
@@ -93,6 +94,25 @@ The effective skip rate is `playbackSpeed × silenceSpeed`, which is capped at *
 
 ---
 
+## Keyboard shortcuts
+
+Every shortcut is **Alt + Shift** plus one key. That combination is deliberate: YouTube binds bare keys (`k`, `j`, `l`, space, arrows, `0`–`9`) and the browser owns `Ctrl`/`Cmd` combinations, so these collide with neither. They're ignored while you're typing in a text box.
+
+The full guide is its own page (`shortcuts.html`), reachable from the popup's **Shortcuts** button or with **Alt + Shift + H**.
+
+| Shortcut | Action |
+|---|---|
+| `Alt + Shift + S` | Turn skipping on or off |
+| `Alt + Shift + Up` / `Down` | Base speed ±0.05× |
+| `Alt + Shift + Right` / `Left` | Silence boost ±0.25× |
+| `Alt + Shift + G` / `B` | Speech guard longer / shorter |
+| `Alt + Shift + PgUp` / `PgDn` | Sensitivity ±2 dB |
+| `Alt + Shift + L` | Toggle the speed lock |
+| `Alt + Shift + R` | Reset all settings to defaults |
+| `Alt + Shift + H` | Open this guide |
+
+The bindings live in `chunks/shortcuts-core.js` and the guide renders from that same list, so the page and the code cannot drift apart.
+
 ## Stats
 
 Stored locally in `chrome.storage.local` under the `stats` key and never sent anywhere.
@@ -166,6 +186,7 @@ No build step — the extension is plain HTML/CSS/JS. The decision-making lives 
 | `chunks/guard-core.js` | The speech guard state machine |
 | `chunks/stats-core.js` | Analytics maths |
 | `chunks/value-core.js` | Range clamping for custom values |
+| `chunks/shortcuts-core.js` | Shortcut bindings (pure, tested) |
 
 Run the suites:
 
@@ -175,6 +196,7 @@ node tests/smooth.test.js
 node tests/curve.test.js
 node tests/guard.test.js
 node tests/value.test.js
+node tests/shortcuts.test.js
 node tests/popup.test.js    # types custom values into the real popup in headless Chromium
 node tests/engine.test.js   # runs the real content script in headless Chromium; skips if absent
 ```
@@ -196,6 +218,8 @@ chunks/
   curve-core.js          waveform interpolation (pure, tested)
   guard-core.js          speech guard (pure, tested)
   value-core.js          custom-value clamping (pure, tested)
+  shortcuts-core.js      shortcut bindings (pure, tested)
+  shortcuts.js           shortcuts guide renderer
   custom.js              popup number boxes for exact values
   guard.js               popup speech-guard control
   speed.js               popup playback-speed control
@@ -204,6 +228,7 @@ chunks/
   nav.js                 popup navigation
 popup.html               toolbar popup
 stats.html               full stats page
+shortcuts.html           keyboard shortcuts guide
 icon/                    icon set (16–128 px)
 tests/                   Node test suites
 ```
