@@ -80,7 +80,7 @@ function harness(settings) {
 
 /* A page where a "hold to 2x" happens: the rate is pushed to 2 externally and
    then released. The extension must neither persist it nor fight it. */
-function holdHarness() {
+function holdHarness(lockSpeed) {
   var smooth = fs.readFileSync(path.join(ROOT, "chunks/smooth-core.js"), "utf8");
   var guard = fs.readFileSync(path.join(ROOT, "chunks/guard-core.js"), "utf8");
   var cjs = fs.readFileSync(path.join(ROOT, "content-scripts/content.js"), "utf8");
@@ -100,7 +100,7 @@ function holdHarness() {
     '["paused","muted","ended"].forEach(function(k){Object.defineProperty(video,k,{get:function(){return false;}});});',
     'Object.defineProperty(video,"currentSrc",{get:function(){return "stub";}});',
     'window.chrome={runtime:{id:"t",getURL:function(p){return p;},sendMessage:function(){return Promise.resolve();},onMessage:{addListener:function(){}}},',
-    ' storage:{local:{get:function(k){var d={settings:{enabled:true,playbackSpeed:1,silenceSpeed:8,thresholdDb:-45,minSilenceMs:350,guardMs:150}};return Promise.resolve(k?{[k]:d[k]}:d);},set:function(o){window.__sets.push(JSON.parse(JSON.stringify(o)));return Promise.resolve();}},',
+    ' storage:{local:{get:function(k){var d={settings:{enabled:true,playbackSpeed:1,silenceSpeed:8,thresholdDb:-45,minSilenceMs:350,guardMs:150,lockSpeed:' + lockSpeed + '}};return Promise.resolve(k?{[k]:d[k]}:d);},set:function(o){window.__sets.push(JSON.parse(JSON.stringify(o)));return Promise.resolve();}},',
     ' onChanged:{addListener:function(){},removeListener:function(){}}}};',
     S_CLOSE,
     S_OPEN + smooth + S_CLOSE,
@@ -120,9 +120,9 @@ function holdHarness() {
   ].join("\n");
 }
 
-function runHold() {
-  var f = path.join(os.tmpdir(), "ysc-hold.html");
-  fs.writeFileSync(f, holdHarness());
+function runHold(lockSpeed) {
+  var f = path.join(os.tmpdir(), "ysc-hold-" + lockSpeed + ".html");
+  fs.writeFileSync(f, holdHarness(lockSpeed));
   var out = cp.execSync(BIN + " --headless=new --no-sandbox --disable-gpu --virtual-time-budget=4000 --dump-dom file://" + f,
     { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
   var m = out.match(/<title>HOLD during=([0-9.]+) final=([0-9.]+) persisted=(\d+)<\/title>/);
@@ -179,13 +179,22 @@ if (hot) {
   ok(hot.MAXRATE > 1, "it still boosted at all (" + hot.MAXRATE + "x)");
 }
 
-section("engine — a temporary 2x hold is neither adopted nor fought");
-var hold = runHold();
-ok(hold !== null, "hold run produced a result");
+section("engine — unlocked: a temporary 2x hold is not adopted, and not fought");
+var hold = runHold(false);
+ok(hold !== null, "unlocked run produced a result");
 if (hold) {
-  eq(hold.during, 2, "the extension leaves YouTube's 2x alone while it is held");
-  eq(hold.final, 1, "after release the rate returns to 1x (not stuck at 2x)");
-  eq(hold.persisted, 0, "no playbackSpeed was written to storage");
+  eq(hold.during, 2, "unlocked: YouTube's 2x is left alone while held");
+  eq(hold.final, 1, "unlocked: after release the rate returns to 1x");
+  eq(hold.persisted, 0, "unlocked: no playbackSpeed written to storage");
+}
+
+section("engine — locked: an external speed change cannot take effect");
+var locked = runHold(true);
+ok(locked !== null, "locked run produced a result");
+if (locked) {
+  eq(locked.during, 1, "locked: the external 2x is reverted, rate stays 1x");
+  eq(locked.final, 1, "locked: still 1x after release");
+  eq(locked.persisted, 0, "locked: nothing persisted");
 }
 
 console.log("\n" + (fail === 0 ? "PASS" : "FAIL") + " — " + pass + " passed, " + fail + " failed");
