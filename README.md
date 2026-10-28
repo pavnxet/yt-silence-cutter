@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.10.1
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.11.0
 
 ---
 
@@ -18,7 +18,8 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 ### Playback speed
 - **Manual base speed** — set 0.25×–4× in the popup.
 - **Custom values** — every slider has a number box beside it, so you can type an exact value (1.37×, 5.25×, −47.5 dB, 175 ms) instead of being stuck on the slider's steps. Typed values are clamped to a safe range and saved like any other change.
-- **Adopts your choice** — change the speed on the site itself (e.g. YouTube's menu) and the extension follows it as the new base for that video. This is **session-only and never saved**, so a temporary speed — YouTube's hold-to-2x, for instance — is neither persisted nor fought, and the video always returns to normal on release.
+- **Lock playback speed** (on by default) — once the extension sets a speed, an outside speed changer can't move it: YouTube's speed menu, its hold-to-2x, or another extension. A change made elsewhere is put straight back, so the video stays on the speed you set.
+- **Adopts your choice when unlocked** — with the lock off, changing the speed on the site becomes the new base for that video. That is session-only and never saved, so a temporary speed is neither persisted nor fought.
 - **Relative skipping** — silence and speech are both scaled from the base, so boosting to 1.5× and skipping at 6× behaves sensibly.
 
 ### Live audio view (popup)
@@ -65,6 +66,7 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 | **Silence boost** | Multiplier applied to the base while skipping | 4× | 1× – 10× |
 | **Sensitivity** | Loudness below which audio is "silence" | −45 dB | −80 – −10 dB |
 | **Speech guard** | Untouched margin around speech | 150 ms | 0 – 2000 ms |
+| **Lock playback speed** | Reverts any outside speed change | On | on / off |
 
 Each row's value is a **number box** — click it and type an exact value. Anything outside the range is clamped, and a non-number is rejected (the box snaps back to the current value).
 | **View full stats** | Opens the analytics page | — | — |
@@ -84,6 +86,7 @@ All settings live in `chrome.storage.local` under the `settings` key:
 | `silenceSpeed` | Silence boost (relative to base) | `4` |
 | `thresholdDb` | Silence threshold (dB) | `-45` |
 | `guardMs` | Speech-guard margin (ms) | `150` |
+| `lockSpeed` | Ignore outside speed changes | `true` |
 | `minSilenceMs` | Quiet must last this long before boosting | `350` |
 
 The effective skip rate is `playbackSpeed × silenceSpeed`, which is capped at **16×** (the browser's ceiling for `playbackRate`) — so a 4× base with a 10× boost plays silence at 16×, not 40×.
