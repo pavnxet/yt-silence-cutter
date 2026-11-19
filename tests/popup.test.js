@@ -33,7 +33,12 @@ function chromeBin() {
 var BIN = chromeBin();
 if (!BIN) { console.log("SKIP — no Chromium found; popup test not run"); process.exit(0); }
 
-var SCRIPTS = ["popup-DdYYQyqW.js", "nav.js", "speed.js", "guard.js", "value-core.js", "custom.js", "curve-core.js", "wave.js"];
+var SCRIPTS = (function () {
+  var html = fs.readFileSync(path.join(ROOT, "popup.html"), "utf8");
+  var out = [], re = /src="\/chunks\/([^"]+)"/g, m;
+  while ((m = re.exec(html))) out.push(m[1]);
+  return out;
+})();
 
 function harness() {
   var html = fs.readFileSync(path.join(ROOT, "popup.html"), "utf8");
@@ -72,6 +77,14 @@ function harness() {
     "  type('guardVal','175');   await wait(40); n.gm=window.__store.settings.guardMs;",
     "  type('baseVal','99');     await wait(40); n.psClamped=window.__store.settings.playbackSpeed;",
     "  type('guardVal','abc');   await wait(40); n.gmAfterJunk=window.__store.settings.guardMs;",
+    "  document.querySelector('[data-help=\\'base\\']').click();",
+    "  await wait(40); n.popOpen=!document.getElementById('helpPop').hidden;",
+    "  n.popText=(document.getElementById('helpPop').textContent||'').slice(0,40);",
+    "  document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));",
+    "  await wait(40); n.popClosed=document.getElementById('helpPop').hidden;",
+    "  var ms=document.getElementById('minSil'); ms.value='600';",
+    "  ms.dispatchEvent(new Event('change',{bubbles:true}));",
+    "  await wait(40); n.minSil=window.__store.settings.minSilenceMs;",
     "  n.sliderBase=document.getElementById('base').value;",
     "  n.numBase=document.getElementById('baseVal').value;",
     "  n.numGuard=document.getElementById('guardVal').value;",
@@ -110,6 +123,14 @@ if (r) {
   eq(r.gmAfterJunk, 175, "junk 'abc' leaves guardMs untouched");
   eq(r.numGuard, "175", "junk reverts the number box to the slider value");
   ok(r.writes >= 4, "each accepted value was saved (" + r.writes + " writes)");
+
+  section("popup — the ? popover opens, explains, and closes");
+  eq(r.popOpen, true, "clicking ? opens the popover");
+  ok(String(r.popText).indexOf("Playback speed") > -1, "it shows that control's copy");
+  eq(r.popClosed, true, "Escape closes it");
+
+  section("popup — the new minimum-gap slider saves");
+  eq(r.minSil, 600, "dragging it to 600 ms writes minSilenceMs");
 }
 
 console.log("\n" + (fail === 0 ? "PASS" : "FAIL") + " — " + pass + " passed, " + fail + " failed");

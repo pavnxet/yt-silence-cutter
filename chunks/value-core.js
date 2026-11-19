@@ -20,7 +20,8 @@
     playbackSpeed: [0.25, 4],
     silenceSpeed: [1, 10],
     thresholdDb: [-80, -10],
-    guardMs: [0, 2000]
+    guardMs: [0, 2000],
+    minSilenceMs: [100, 2000]
   };
 
   var MIN_RATE = 0.0625;   // browser floor
@@ -54,6 +55,7 @@
     out.silenceSpeed = clampNum(s.silenceSpeed, RANGES.silenceSpeed[0], RANGES.silenceSpeed[1], 4);
     out.thresholdDb = clampNum(s.thresholdDb, RANGES.thresholdDb[0], RANGES.thresholdDb[1], -45);
     out.guardMs = clampNum(s.guardMs, RANGES.guardMs[0], RANGES.guardMs[1], 150);
+    out.minSilenceMs = clampNum(s.minSilenceMs, RANGES.minSilenceMs[0], RANGES.minSilenceMs[1], 350);
     return out;
   }
 

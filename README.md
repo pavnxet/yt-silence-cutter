@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.12.0
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.13.0
 
 ---
 
@@ -17,6 +17,9 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 
 ### Playback speed
 - **Manual base speed** — set 0.25×–4× in the popup.
+- **`?` on every control** — click the question mark beside any slider to see what it does, its range and a tip, without leaving the popup.
+- **Skip gaps longer than** — quiet has to last a minimum time before the fast-forward starts, so the short pauses between words and sentences are left alone.
+- **Live streams left alone** — a stream with no finite duration is never sped up, since skipping ahead of the live edge only causes buffering.
 - **Keyboard shortcuts** — twelve `Alt + Shift` bindings for every control, plus a built-in guide page. They cannot collide with YouTube's or the browser's shortcuts.
 - **Custom values** — every slider has a number box beside it, so you can type an exact value (1.37×, 5.25×, −47.5 dB, 175 ms) instead of being stuck on the slider's steps. Typed values are clamped to a safe range and saved like any other change.
 - **Lock playback speed** (on by default) — once the extension sets a speed, an outside speed changer can't move it: YouTube's speed menu, its hold-to-2x, or another extension. A change made elsewhere is put straight back, so the video stays on the speed you set.
@@ -66,6 +69,7 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 | **Playback speed** | Your base speed | 1× | 0.25× – 4× |
 | **Silence boost** | Multiplier applied to the base while skipping | 4× | 1× – 10× |
 | **Sensitivity** | Loudness below which audio is "silence" | −45 dB | −80 – −10 dB |
+| **Skip gaps longer than** | Quiet must last this long before skipping | 350 ms | 100 – 2000 ms |
 | **Speech guard** | Untouched margin around speech | 150 ms | 0 – 2000 ms |
 | **Lock playback speed** | Reverts any outside speed change | On | on / off |
 
@@ -186,6 +190,7 @@ No build step — the extension is plain HTML/CSS/JS. The decision-making lives 
 | `chunks/guard-core.js` | The speech guard state machine |
 | `chunks/stats-core.js` | Analytics maths |
 | `chunks/value-core.js` | Range clamping for custom values |
+| `chunks/help-core.js` | Help copy for the ? popovers (pure, tested) |
 | `chunks/shortcuts-core.js` | Shortcut bindings (pure, tested) |
 
 Run the suites:
@@ -197,6 +202,7 @@ node tests/curve.test.js
 node tests/guard.test.js
 node tests/value.test.js
 node tests/shortcuts.test.js
+node tests/help.test.js
 node tests/popup.test.js    # types custom values into the real popup in headless Chromium
 node tests/engine.test.js   # runs the real content script in headless Chromium; skips if absent
 ```
@@ -218,6 +224,8 @@ chunks/
   curve-core.js          waveform interpolation (pure, tested)
   guard-core.js          speech guard (pure, tested)
   value-core.js          custom-value clamping (pure, tested)
+  help-core.js           ? popover copy (pure, tested)
+  help.js                ? popover behaviour
   shortcuts-core.js      shortcut bindings (pure, tested)
   shortcuts.js           shortcuts guide renderer
   custom.js              popup number boxes for exact values

@@ -130,6 +130,38 @@
         font-variant-numeric: tabular-nums;
         padding: 3px 7px;
       }
+      .lbl { display: inline-flex; align-items: center; gap: 6px; }
+      .hbtn {
+        width: 15px; height: 15px; flex: none; padding: 0;
+        border-radius: 50%;
+        border: 1px solid var(--border-strong);
+        background: var(--surface-2);
+        color: var(--text-3);
+        font: 700 10px/1 var(--font-body);
+        display: grid; place-items: center;
+        cursor: pointer;
+      }
+      .hbtn:hover { border-color: var(--accent); color: var(--accent-ink); }
+      .hbtn[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+      #helpPop {
+        position: fixed; z-index: 20; width: 244px;
+        background: var(--surface);
+        border: 1px solid var(--border-strong);
+        border-radius: 12px;
+        padding: 12px 13px;
+        box-shadow: 0 8px 24px rgba(31, 30, 29, 0.14);
+      }
+      #helpPop[hidden] { display: none; }
+      .hp-title { font: 600 12px var(--font-body); color: var(--text); margin-bottom: 5px; }
+      .hp-body { margin: 0 0 7px; font-size: 11.5px; line-height: 1.5; color: var(--text-2); }
+      .hp-range {
+        display: inline-block; margin-bottom: 7px; padding: 1px 7px;
+        border-radius: 6px; background: var(--surface-2);
+        border: 1px solid var(--border);
+        font-size: 10.5px; color: var(--text-3);
+        font-variant-numeric: tabular-nums;
+      }
+      .hp-tip { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--accent-ink); }
       .lockrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       .lockrow label { margin: 0; }
       .num:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
@@ -295,23 +327,27 @@
 
       <div class="tune" id="tune">
         <div class="field">
-          <label>Playback speed <input class="num" type="number" id="baseVal" min="0.25" max="4" step="0.01" value="1" aria-label="Playback speed"></label>
+          <label><span class="lbl">Playback speed<button class="hbtn" type="button" data-help="base" aria-expanded="false" aria-label="About playback speed">?</button></span> <input class="num" type="number" id="baseVal" min="0.25" max="4" step="0.01" value="1" aria-label="Playback speed"></label>
           <input type="range" id="base" min="0.25" max="4" step="0.01">
         </div>
         <div class="field">
-          <label>Silence boost <input class="num" type="number" id="speedVal" min="1" max="10" step="0.01" value="4" aria-label="Silence boost"></label>
+          <label><span class="lbl">Silence boost<button class="hbtn" type="button" data-help="speed" aria-expanded="false" aria-label="About silence boost">?</button></span> <input class="num" type="number" id="speedVal" min="1" max="10" step="0.01" value="4" aria-label="Silence boost"></label>
           <input type="range" id="speed" min="1" max="10" step="0.01">
         </div>
         <div class="field">
-          <label>Sensitivity <input class="num" type="number" id="threshVal" min="-80" max="-10" step="0.5" value="-45" aria-label="Sensitivity in dB"></label>
+          <label><span class="lbl">Sensitivity<button class="hbtn" type="button" data-help="thresh" aria-expanded="false" aria-label="About sensitivity">?</button></span> <input class="num" type="number" id="threshVal" min="-80" max="-10" step="0.5" value="-45" aria-label="Sensitivity in dB"></label>
           <input type="range" id="thresh" min="-80" max="-10" step="0.5">
         </div>
         <div class="field">
-          <label>Speech guard <input class="num" type="number" id="guardVal" min="0" max="2000" step="1" value="150" aria-label="Speech guard in milliseconds"></label>
+          <label><span class="lbl">Skip gaps longer than<button class="hbtn" type="button" data-help="minSil" aria-expanded="false" aria-label="About the minimum gap length">?</button></span> <input class="num" type="number" id="minSilVal" min="100" max="2000" step="10" value="350" aria-label="Minimum gap length in milliseconds"></label>
+          <input type="range" id="minSil" min="100" max="2000" step="10">
+        </div>
+        <div class="field">
+          <label><span class="lbl">Speech guard<button class="hbtn" type="button" data-help="guard" aria-expanded="false" aria-label="About speech guard">?</button></span> <input class="num" type="number" id="guardVal" min="0" max="2000" step="1" value="150" aria-label="Speech guard in milliseconds"></label>
           <input type="range" id="guard" min="0" max="2000" step="1">
         </div>
         <div class="field lockrow">
-          <label for="lock">Lock playback speed</label>
+          <label for="lock"><span class="lbl">Lock playback speed<button class="hbtn" type="button" data-help="lock" aria-expanded="false" aria-label="About the speed lock">?</button></span></label>
           <label class="switch">
             <input type="checkbox" id="lock" aria-label="Lock playback speed">
             <span class="slider"></span>
@@ -330,11 +366,12 @@
     </div>
 
     <script src="/chunks/nav.js"></script>
-    <script src="/chunks/speed.js"></script>
-    <script src="/chunks/guard.js"></script>
+    <script src="/chunks/help-core.js"></script>
+    <script src="/chunks/help.js"></script>
     <script src="/chunks/value-core.js"></script>
     <script src="/chunks/custom.js"></script>
     <script src="/chunks/curve-core.js"></script>
     <script src="/chunks/wave.js"></script>
+    <div id="helpPop" role="dialog" aria-live="polite" hidden></div>
   </body>
 </html>

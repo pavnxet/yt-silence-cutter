@@ -39,7 +39,7 @@ function chromeBin() {
 var BIN = chromeBin();
 if (!BIN) { console.log("SKIP — no Chromium found; engine test not run"); process.exit(0); }
 
-function harness(settings) {
+function harness(settings, duration) {
   var smooth = fs.readFileSync(path.join(ROOT, "chunks/smooth-core.js"), "utf8");
   var guard = fs.readFileSync(path.join(ROOT, "chunks/guard-core.js"), "utf8");
   var cjs = fs.readFileSync(path.join(ROOT, "content-scripts/content.js"), "utf8");
@@ -58,6 +58,7 @@ function harness(settings) {
     'var _rate=1, log=window.__log;',
     'Object.defineProperty(video,"playbackRate",{get:function(){return _rate;},set:function(v){_rate=v;log.push([Math.round(performance.now()),v]);}});',
     '["paused","muted","ended"].forEach(function(k){Object.defineProperty(video,k,{get:function(){return false;}});});',
+    'Object.defineProperty(video,"duration",{get:function(){return ' + (duration === undefined ? 100 : duration) + ';}});',
     'Object.defineProperty(video,"currentSrc",{get:function(){return "stub";}});',
     'window.chrome={runtime:{id:"t",getURL:function(p){return p;},sendMessage:function(){return Promise.resolve();},onMessage:{addListener:function(){}}},',
     ' storage:{local:{get:function(k){var d={settings:' + JSON.stringify(settings) + '};return Promise.resolve(k?{[k]:d[k]}:d);},set:function(){return Promise.resolve();}},',
@@ -98,6 +99,7 @@ function holdHarness(lockSpeed) {
     'var _rate=1;',
     'Object.defineProperty(video,"playbackRate",{get:function(){return _rate;},set:function(v){_rate=v;try{video.dispatchEvent(new Event("ratechange"));}catch(e){}}});',
     '["paused","muted","ended"].forEach(function(k){Object.defineProperty(video,k,{get:function(){return false;}});});',
+    'Object.defineProperty(video,"duration",{get:function(){return 100;}});',
     'Object.defineProperty(video,"currentSrc",{get:function(){return "stub";}});',
     'window.chrome={runtime:{id:"t",getURL:function(p){return p;},sendMessage:function(){return Promise.resolve();},onMessage:{addListener:function(){}}},',
     ' storage:{local:{get:function(k){var d={settings:{enabled:true,playbackSpeed:1,silenceSpeed:8,thresholdDb:-45,minSilenceMs:350,guardMs:150,lockSpeed:' + lockSpeed + '}};return Promise.resolve(k?{[k]:d[k]}:d);},set:function(o){window.__sets.push(JSON.parse(JSON.stringify(o)));return Promise.resolve();}},',
@@ -151,6 +153,7 @@ function shortcutHarness() {
     'var _rate=1;',
     'Object.defineProperty(video,"playbackRate",{get:function(){return _rate;},set:function(v){_rate=v;}});',
     '["paused","muted","ended"].forEach(function(k){Object.defineProperty(video,k,{get:function(){return false;}});});',
+    'Object.defineProperty(video,"duration",{get:function(){return 100;}});',
     'Object.defineProperty(video,"currentSrc",{get:function(){return "stub";}});',
     'window.chrome={runtime:{id:"t",getURL:function(p){return p;},',
     '   sendMessage:function(m){window.__msgs.push(m);return Promise.resolve();},onMessage:{addListener:function(){}}},',
@@ -186,9 +189,9 @@ function runShortcut() {
   return { writes: Number(m[1]), speed: m[2], opens: Number(m[3]), page: m[4] };
 }
 
-function run(settings) {
-  var f = path.join(os.tmpdir(), "ysc-engine-" + JSON.stringify(settings).replace(/[^a-z0-9]/gi, "") + ".html");
-  fs.writeFileSync(f, harness(settings));
+function run(settings, duration) {
+  var f = path.join(os.tmpdir(), "ysc-engine-" + JSON.stringify(settings).replace(/[^a-z0-9]/gi, "") + "-" + duration + ".html");
+  fs.writeFileSync(f, harness(settings, duration));
   var out = cp.execSync(
     BIN + " --headless=new --no-sandbox --disable-gpu --virtual-time-budget=4000 --dump-dom file://" + f,
     { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 }
@@ -220,8 +223,8 @@ if (guarded && bare) {
   ok(guarded.NBOOST >= 1, "the guard run actually boosted (NBOOST=" + guarded.NBOOST + ")");
   ok(guarded.FIRSTBASE > 1000, "guarded: returned to base at " + guarded.FIRSTBASE + "ms");
   ok(bare.FIRSTBASE > 1000, "unguarded: returned to base at " + bare.FIRSTBASE + "ms");
-  ok(guarded.FIRSTBASE < 2200, "guarded: stops before full speech (" + guarded.FIRSTBASE + " < 2200)");
-  ok(bare.FIRSTBASE < 2200, "unguarded: stops before full speech too (" + bare.FIRSTBASE + ")");
+  ok(guarded.FIRSTBASE > 0 && guarded.FIRSTBASE < 2200, "guarded: stops before full speech (" + guarded.FIRSTBASE + " < 2200)");
+  ok(bare.FIRSTBASE > 0 && bare.FIRSTBASE < 2200, "unguarded: stops before full speech too (" + bare.FIRSTBASE + ")");
   ok(guarded.FIRSTBASE < bare.FIRSTBASE,
      "guard releases earlier than no guard (" + guarded.FIRSTBASE + "ms vs " + bare.FIRSTBASE + "ms)");
   ok(bare.FIRSTBASE - guarded.FIRSTBASE >= 15,
@@ -261,6 +264,13 @@ if (sc) {
   eq(sc.speed, "1.05", "Alt+Shift+Up raised the base speed to 1.05");
   eq(sc.opens, 1, "Alt+Shift+H sent one open request");
   eq(sc.page, "shortcuts.html", "it asked for the shortcuts guide");
+}
+
+section("engine — live streams are left alone");
+var live = run(BASE, Infinity);
+ok(live !== null, "live run produced a result");
+if (live) {
+  ok(live.MAXRATE <= 1, "a stream with no finite duration is never sped up (max " + live.MAXRATE + "x)");
 }
 
 console.log("\n" + (fail === 0 ? "PASS" : "FAIL") + " — " + pass + " passed, " + fail + " failed");

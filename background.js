@@ -1,6 +1,9 @@
-/* YT Silence Cutter — https://github.com/pavnxet/yt-silence-cutter
-   Author: Pavneet Singh (pavnxet) · MIT License */
-var background=(function(){"use strict";var s,i;function u(n){return n==null||typeof n=="function"?{main:n}:n}const r=(i=(s=globalThis.browser)==null?void 0:s.runtime)!=null&&i.id?globalThis.browser:globalThis.chrome,c="auth";async function l(n){await r.storage.local.set({[c]:n})}const d=u(()=>{console.log("[yt-silence-cutter] background ready",{id:r.runtime.id}),r.runtime.onMessage.addListener(n=>{const t=n;if((t==null?void 0:t.type)==="yt-silence-cutter:auth"&&t.payload){const o=t.payload;l({authenticated:!!o.authenticated,plan:o.plan,pro:o.pro,email:o.email,name:o.name,planExpiresAt:o.planExpiresAt??null,token:o.token,ts:o.ts??Date.now()})}})});function h(){}function e(n,...t){}const b={debug:(...n)=>e(console.debug,...n),log:(...n)=>e(console.log,...n),warn:(...n)=>e(console.warn,...n),error:(...n)=>e(console.error,...n)};let a;try{a=d.main(),a instanceof Promise&&console.warn("The background's main() function return a promise, but it must be synchronous")}catch(n){throw b.error("The background crashed on startup!"),n}var g=a;return g})();
+/* YT Silence Cutter — background service worker.
+   The WXT bundle that used to sit here only logged a "ready" line and handled the
+   paywall auth message. The paywall is gone, so both are gone too.
+   Author: Pavneet Singh (pavnxet) · MIT License
+   https://github.com/pavnxet/yt-silence-cutter */
+
 
 /* ---- analytics aggregator (single writer) ---- */
 try{importScripts("chunks/stats-core.js")}catch(e){console.warn("[yt-silence-cutter] stats-core unavailable",e)}

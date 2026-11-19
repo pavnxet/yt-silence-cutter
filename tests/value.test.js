@@ -58,12 +58,16 @@ eq(V.sanitize({}).playbackSpeed, 1, "missing values get defaults");
 eq(V.sanitize({}).silenceSpeed, 4, "silenceSpeed default");
 eq(V.sanitize({}).thresholdDb, -45, "thresholdDb default");
 eq(V.sanitize({}).guardMs, 150, "guardMs default");
+eq(V.sanitize({}).minSilenceMs, 350, "minSilenceMs default");
+eq(V.sanitize({ minSilenceMs: 99999 }).minSilenceMs, 2000, "minSilenceMs clamped");
+eq(V.sanitize({ minSilenceMs: 5 }).minSilenceMs, 100, "minSilenceMs floored");
 
 section("ranges are sane");
 eq(V.RANGES.playbackSpeed, [0.25, 4], "playback range");
 eq(V.RANGES.silenceSpeed, [1, 10], "boost range");
 eq(V.RANGES.thresholdDb, [-80, -10], "sensitivity range");
 eq(V.RANGES.guardMs, [0, 2000], "guard range");
+eq(V.RANGES.minSilenceMs, [100, 2000], "minimum-gap range");
 
 console.log("\n" + (fail === 0 ? "PASS" : "FAIL") + " — " + pass + " passed, " + fail + " failed");
 process.exit(fail === 0 ? 0 : 1);

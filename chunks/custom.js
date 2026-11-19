@@ -16,7 +16,8 @@
     { slider: "base",   num: "baseVal",   key: "playbackSpeed" },
     { slider: "speed",  num: "speedVal",  key: "silenceSpeed" },
     { slider: "thresh", num: "threshVal", key: "thresholdDb" },
-    { slider: "guard",  num: "guardVal",  key: "guardMs" }
+    { slider: "guard",  num: "guardVal",  key: "guardMs" },
+    { slider: "minSil", num: "minSilVal", key: "minSilenceMs" }
   ];
 
   function el(id) { return document.getElementById(id); }
@@ -53,6 +54,14 @@
       if (document.activeElement !== num) num.value = sl.value;
     });
 
+    // and releasing it saves — the slider used to rely on other scripts for this
+    sl.addEventListener("change", function () {
+      var v = V.clampNum(sl.value, range[0], range[1], null);
+      if (v === null) return;
+      num.value = String(v);
+      save(f.key, v);
+    });
+
     // typing a number updates the slider and saves
     function commit() {
       var v = V.clampNum(num.value, range[0], range[1], null);
@@ -62,7 +71,6 @@
       save(f.key, v);
     }
     num.addEventListener("change", commit);
-    num.addEventListener("blur", commit);
     num.addEventListener("keydown", function (e) {
       if (e.key === "Enter") { commit(); num.blur(); }
     });
@@ -73,12 +81,9 @@
     lockEl.addEventListener("change", function () { save("lockSpeed", lockEl.checked); });
   }
 
-  function applyAll(s) {
-    s = s || {};
-    for (var i = 0; i < FIELDS.length; i++) {
-      var f = FIELDS[i];
-      if (typeof s[f.key] === "number") paint(f, s[f.key]);
-    }
+  function applyAll(raw) {
+    var s = V.sanitize(raw || {});   // a corrupt stored value can't break the UI
+    for (var i = 0; i < FIELDS.length; i++) paint(FIELDS[i], s[FIELDS[i].key]);
     if (lockEl) lockEl.checked = s.lockSpeed !== false;
   }
 
