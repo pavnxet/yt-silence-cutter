@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.13.0
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.13.1
 
 ---
 

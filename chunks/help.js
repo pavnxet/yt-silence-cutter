@@ -8,10 +8,17 @@
   "use strict";
 
   var H = window.YSCHelp;
-  var pop = document.getElementById("helpPop");
-  if (!H || !pop) return;
+  if (!H) return;
 
+  var pop = null;
   var openBtn = null;
+
+  // Resolved on use, not at load: the host element only has to exist by the
+  // time someone clicks, so a script-order change cannot silently break this.
+  function host() {
+    if (!pop) pop = document.getElementById("helpPop");
+    return pop;
+  }
 
   function el(tag, cls, text) {
     var n = document.createElement(tag);
@@ -24,33 +31,36 @@
     if (!openBtn) return;
     openBtn.setAttribute("aria-expanded", "false");
     openBtn = null;
-    pop.hidden = true;
-    pop.innerHTML = "";
+    var p = host();
+    if (p) { p.hidden = true; p.innerHTML = ""; }
   }
 
   function place(btn) {
     // fixed position, clamped so it never leaves the popup's viewport
+    var p = host();
+    if (!p) return;
     var r = btn.getBoundingClientRect();
-    var pw = pop.offsetWidth, ph = pop.offsetHeight;
+    var pw = p.offsetWidth, ph = p.offsetHeight;
     var left = Math.min(Math.max(8, r.left - 12), Math.max(8, window.innerWidth - pw - 8));
     var top = r.bottom + 6;
     if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
-    pop.style.left = left + "px";
-    pop.style.top = top + "px";
+    p.style.left = left + "px";
+    p.style.top = top + "px";
   }
 
   function show(btn) {
     var id = btn.getAttribute("data-help");
     var h = H.get(id);
-    if (!h) return;
+    var p = host();
+    if (!h || !p) return;
 
-    pop.innerHTML = "";
-    pop.appendChild(el("div", "hp-title", h.title));
-    pop.appendChild(el("p", "hp-body", h.body));
-    if (h.range) pop.appendChild(el("div", "hp-range", h.range));
-    if (h.tip) pop.appendChild(el("p", "hp-tip", h.tip));
+    p.innerHTML = "";
+    p.appendChild(el("div", "hp-title", h.title));
+    p.appendChild(el("p", "hp-body", h.body));
+    if (h.range) p.appendChild(el("div", "hp-range", h.range));
+    if (h.tip) p.appendChild(el("p", "hp-tip", h.tip));
 
-    pop.hidden = false;
+    p.hidden = false;
     btn.setAttribute("aria-expanded", "true");
     openBtn = btn;
     place(btn);
@@ -66,7 +76,8 @@
       show(btn);
       return;
     }
-    if (openBtn && !pop.contains(e.target)) close();
+    var p = host();
+    if (openBtn && p && !p.contains(e.target)) close();
   });
 
   document.addEventListener("keydown", function (e) {

@@ -19,12 +19,15 @@
 ## [area: popup]
 - [FACT] The popup chunk (`chunks/popup-*.js`) writes `.textContent` on the value nodes. Replacing those spans with `<input type="number">` is safe — `textContent` on an input is a no-op, it does not throw. (v:2026-11-19 · med · S-20261119-0001)
 - [CONVENTION] `chunks/custom.js` owns the sliders and number boxes for every control: it paints on load and on `storage.onChanged`, and saves on the number's `change` **and** the slider's `change`. A new control needs an entry in its `FIELDS` and a range in `value-core.js`. (v:2026-11-19 · high · S-20261119-0001)
+- [PITFALL] A classic script in `popup.html` that grabs an element by id must sit *after* that element. `#helpPop` sat after `help.js`, so the popover returned early and the whole feature silently did nothing. Resolve such elements lazily. (v:2026-11-19 · high · S-20261119-0002)
+- [FACT] The popup chunk is loaded with `type="module"`, so it is deferred and runs after the document is parsed. The other popup scripts are classic and run in place. (v:2026-11-19 · high · S-20261119-0002)
 - [FACT] `value-core.sanitize()` clamps a whole settings object and fills defaults — use it when loading from storage so a corrupt value cannot break the UI. (v:2026-11-19 · med · S-20261119-0001)
 
 ## [area: tests]
 - [PITFALL] Overriding `video.playbackRate` with a plain property does not fire a native `ratechange`; dispatch one manually or the extension never sees the change. (v:2026-11-19 · high · S-20261119-0001)
 - [PITFALL] The harness's `chrome.storage.local.get` must accept a callback as well as returning a promise, like the real API. (v:2026-11-19 · high · S-20261119-0001)
 - [PITFALL] A `-1` "no result" sentinel satisfies `< 2200` assertions. Always assert a lower bound too. (v:2026-11-19 · med · S-20261119-0001)
+- [PITFALL] A harness that strips the script tags and appends them at the end of the body hides DOM-order bugs — it is how the broken `?` popover passed. Inline each script **where its tag sits**, and keep `type="module"` so deferred timing matches the real page. (v:2026-11-19 · high · S-20261119-0002)
 - [CONVENTION] Derive the popup test's script list from `popup.html` so deleting a script cannot silently break the test. (v:2026-11-19 · med · S-20261119-0001)
 
 ## [area: workflow]

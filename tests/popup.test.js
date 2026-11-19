@@ -33,16 +33,20 @@ function chromeBin() {
 var BIN = chromeBin();
 if (!BIN) { console.log("SKIP — no Chromium found; popup test not run"); process.exit(0); }
 
-var SCRIPTS = (function () {
-  var html = fs.readFileSync(path.join(ROOT, "popup.html"), "utf8");
-  var out = [], re = /src="\/chunks\/([^"]+)"/g, m;
-  while ((m = re.exec(html))) out.push(m[1]);
-  return out;
-})();
 
 function harness() {
   var html = fs.readFileSync(path.join(ROOT, "popup.html"), "utf8");
-  html = html.replace(/<script[^>]*src="[^"]*"[^>]*><\/script>/g, "");
+
+  // Inline every script exactly where its tag sits, so the DOM order matches
+  // the real popup. A script that runs before its element exists must fail
+  // here too — that is how the broken ? popover got past the last run.
+  html = html.replace(/<script([^>]*)\ssrc="\/chunks\/([^"]+)"([^>]*)><\/script>/g, function (m, a1, f, a2) {
+    // keep type="module": module scripts are deferred, and losing that changes
+    // when they run relative to the DOM
+    var mod = /type="module"/.test(a1 + " " + a2) ? ' type="module"' : "";
+    return "<" + "script" + mod + ">" + fs.readFileSync(path.join(ROOT, "chunks", f), "utf8") + S_CLOSE;
+  });
+  if (html.indexOf("<script") === -1) throw new Error("no scripts were inlined");
 
   var shim = [
     "window.__store={settings:{enabled:true,playbackSpeed:1,silenceSpeed:4,thresholdDb:-45,minSilenceMs:350,guardMs:150}};",
@@ -59,10 +63,6 @@ function harness() {
     "  }",
     "};"
   ].join("\n");
-
-  var body = SCRIPTS.map(function (f) {
-    return S_OPEN + fs.readFileSync(path.join(ROOT, "chunks", f), "utf8") + S_CLOSE;
-  }).join("\n");
 
   var probe = [
     S_OPEN,
@@ -94,7 +94,9 @@ function harness() {
     S_CLOSE
   ].join("\n");
 
-  return html.replace("</body>", S_OPEN + shim + S_CLOSE + "\n" + body + "\n" + probe + "\n</body>");
+  return html
+    .replace("</head>", S_OPEN + shim + S_CLOSE + "\n</head>")
+    .replace("</body>", probe + "\n</body>");
 }
 
 function run() {

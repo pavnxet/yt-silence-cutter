@@ -20,3 +20,13 @@
 - **Verified**: `node tests/{stats,smooth,curve,guard,value,shortcuts,help,popup,engine}.test.js` → 9 suites, 344 assertions, all pass; `node --check` on every shipped script → clean; popup rendered headless to confirm the `?` popover.
 - **Refs**: learning.md [area: github], [area: content engine], [area: popup], [area: tests]
 - **Open / Next**: researched but deferred — adaptive threshold, mute-during-silence, per-site rules, in-player UI. See README "Not in this version (yet)".
+
+## S-20261119-0002 · Fix: the ? popovers never bound
+- **Agent**: General Assistant · **Tier**: T1 · **Status**: DONE
+- **Repo**: branch `main` · base `v1.13.0` · tree clean after push
+- **Request**: "the ? thing not working"
+- **Cause**: `#helpPop` was emitted after the `help.js` script tag, so `getElementById` returned null at load and the module returned early — nothing was ever bound. The test passed because its harness moved all scripts to the end of the body, after the host.
+- **Did**: moved the host above the scripts; `help.js` now resolves the host lazily; harness now inlines each script in place and preserves `type="module"`.
+- **Verified**: `node tests/popup.test.js` → reproduced the failure first (2 FAIL), then 15/15 pass; full suite 9 suites / 344 assertions; popup rendered headless with the real DOM order.
+- **Refs**: learning.md [area: popup], [area: tests]
+- **Open / Next**: none
