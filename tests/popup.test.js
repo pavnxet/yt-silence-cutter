@@ -34,7 +34,7 @@ var BIN = chromeBin();
 if (!BIN) { console.log("SKIP — no Chromium found; popup test not run"); process.exit(0); }
 
 
-function harness() {
+function harness(store, probeHtml) {
   var html = fs.readFileSync(path.join(ROOT, "popup.html"), "utf8");
 
   // Inline every script exactly where its tag sits, so the DOM order matches
@@ -49,7 +49,7 @@ function harness() {
   if (html.indexOf("<script") === -1) throw new Error("no scripts were inlined");
 
   var shim = [
-    "window.__store={settings:{enabled:true,playbackSpeed:1,silenceSpeed:4,thresholdDb:-45,minSilenceMs:350,guardMs:150}};",
+    "window.__store=" + JSON.stringify(store || {}) + ";",
     "window.__saved=[];",
     "window.chrome={",
     "  runtime:{onMessage:{addListener:function(){}},sendMessage:function(){return Promise.resolve();},getURL:function(p){return p;}},",
@@ -64,7 +64,7 @@ function harness() {
     "};"
   ].join("\n");
 
-  var probe = [
+  var defaultProbe = [
     S_OPEN,
     "(async function(){",
     "  function type(id,v){var el=document.getElementById(id);el.value=v;el.dispatchEvent(new Event('change',{bubbles:true}));}",
@@ -82,26 +82,35 @@ function harness() {
     "  n.popText=(document.getElementById('helpPop').textContent||'').slice(0,40);",
     "  document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));",
     "  await wait(40); n.popClosed=document.getElementById('helpPop').hidden;",
+    "  var lockBefore=window.__store.settings.lockSpeed;",
+    "  document.querySelector('[data-help=\\'lock\\']').click();",
+    "  await wait(60); n.lockUnchanged=(window.__store.settings.lockSpeed===lockBefore);",
+    "  n.lockPopOpen=!document.getElementById('helpPop').hidden;",
+    "  n.lockChecked=document.getElementById('lock').checked;",
+    "  document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));",
+    "  await wait(40);",
     "  var ms=document.getElementById('minSil'); ms.value='600';",
     "  ms.dispatchEvent(new Event('change',{bubbles:true}));",
     "  await wait(40); n.minSil=window.__store.settings.minSilenceMs;",
     "  n.sliderBase=document.getElementById('base').value;",
     "  n.numBase=document.getElementById('baseVal').value;",
     "  n.numGuard=document.getElementById('guardVal').value;",
+    "  n.status=(document.getElementById('status').textContent||'').trim();",
     "  n.writes=window.__saved.length;",
     "  document.title='RES='+JSON.stringify(n);",
     "})();",
     S_CLOSE
   ].join("\n");
 
+  var probe = probeHtml || defaultProbe;
   return html
     .replace("</head>", S_OPEN + shim + S_CLOSE + "\n</head>")
     .replace("</body>", probe + "\n</body>");
 }
 
-function run() {
-  var f = path.join(os.tmpdir(), "ysc-popup.html");
-  fs.writeFileSync(f, harness());
+function run(store, probeHtml, name) {
+  var f = path.join(os.tmpdir(), "ysc-popup-" + (name || "default") + ".html");
+  fs.writeFileSync(f, harness(store, probeHtml));
   var out = cp.execSync(BIN + " --headless=new --no-sandbox --disable-gpu --virtual-time-budget=3000 --dump-dom file://" + f,
     { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
   var m = out.match(/<title>RES=([^<]*)<\/title>/);
@@ -109,9 +118,32 @@ function run() {
   try { return JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&")); } catch (e) { return null; }
 }
 
+/* Reports only what the controls show once the popup has loaded. */
+function stateProbe() {
+  return [
+    S_OPEN,
+    "setTimeout(function(){",
+    "  var g=function(id){var e=document.getElementById(id);return e?e.value:null;};",
+    "  document.title='STATE='+JSON.stringify({ps:g('baseVal'),ss:g('speedVal'),td:g('threshVal'),ms:g('minSilVal'),gm:g('guardVal'),lock:document.getElementById('lock').checked});",
+    "},250);",
+    S_CLOSE
+  ].join("\n");
+}
+
+function runState(store, name) {
+  var f = path.join(os.tmpdir(), "ysc-popup-" + name + ".html");
+  fs.writeFileSync(f, harness(store, stateProbe()));
+  var out = cp.execSync(BIN + " --headless=new --no-sandbox --disable-gpu --virtual-time-budget=2500 --dump-dom file://" + f,
+    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
+  var m = out.match(/<title>STATE=([^<]*)<\/title>/);
+  if (!m) return null;
+  try { return JSON.parse(m[1].replace(/&quot;/g, '"')); } catch (e) { return null; }
+}
+
 /* ------------------------------------------------------------------ */
 section("popup — typing custom values reaches storage");
-var r = run();
+var DEFAULT_STORE = { settings: { enabled: true, playbackSpeed: 1, silenceSpeed: 4, thresholdDb: -45, minSilenceMs: 350, guardMs: 150 } };
+var r = run(DEFAULT_STORE, null, "full");
 ok(r !== null, "popup produced a result");
 
 if (r) {
@@ -126,13 +158,47 @@ if (r) {
   eq(r.numGuard, "175", "junk reverts the number box to the slider value");
   ok(r.writes >= 4, "each accepted value was saved (" + r.writes + " writes)");
 
+  section("popup — the popup core actually initialised");
+  ok(r.status && r.status !== "—", "the status line is populated ('" + r.status + "')");
+
   section("popup — the ? popover opens, explains, and closes");
   eq(r.popOpen, true, "clicking ? opens the popover");
   ok(String(r.popText).indexOf("Playback speed") > -1, "it shows that control's copy");
   eq(r.popClosed, true, "Escape closes it");
 
+  section("popup — ? inside the lock row must not toggle the switch");
+  eq(r.lockPopOpen, true, "the lock's ? opens its help");
+  eq(r.lockUnchanged, true, "clicking it did NOT flip the speed lock");
+  eq(r.lockChecked, true, "the switch stayed on");
+
   section("popup — the new minimum-gap slider saves");
   eq(r.minSil, 600, "dragging it to 600 ms writes minSilenceMs");
+}
+
+section("popup — a fresh install (no stored settings) shows defaults");
+var fresh = runState({}, "fresh");
+ok(fresh !== null, "the popup rendered with an empty store");
+if (fresh) {
+  eq(fresh.ps, "1", "playback speed defaults to 1");
+  eq(fresh.ss, "4", "silence boost defaults to 4");
+  eq(fresh.td, "-45", "sensitivity defaults to -45");
+  eq(fresh.ms, "350", "minimum gap defaults to 350");
+  eq(fresh.gm, "150", "speech guard defaults to 150");
+  eq(fresh.lock, true, "the speed lock defaults to on");
+}
+
+section("popup — a corrupted store cannot break the controls");
+var bad = runState({ settings: {
+  playbackSpeed: "abc", silenceSpeed: null, thresholdDb: 999,
+  guardMs: -5, minSilenceMs: 99999, lockSpeed: "yes"
+} }, "corrupt");
+ok(bad !== null, "the popup rendered with corrupt values");
+if (bad) {
+  eq(bad.ps, "1", "a non-numeric speed falls back to 1");
+  eq(bad.ss, "4", "a null boost falls back to 4");
+  eq(bad.td, "-10", "an out-of-range threshold clamps to -10");
+  eq(bad.gm, "0", "a negative guard clamps to 0");
+  eq(bad.ms, "2000", "a huge minimum gap clamps to 2000");
 }
 
 console.log("\n" + (fail === 0 ? "PASS" : "FAIL") + " — " + pass + " passed, " + fail + " failed");

@@ -28,6 +28,8 @@
 - [PITFALL] The harness's `chrome.storage.local.get` must accept a callback as well as returning a promise, like the real API. (v:2026-11-19 · high · S-20261119-0001)
 - [PITFALL] A `-1` "no result" sentinel satisfies `< 2200` assertions. Always assert a lower bound too. (v:2026-11-19 · med · S-20261119-0001)
 - [PITFALL] A harness that strips the script tags and appends them at the end of the body hides DOM-order bugs — it is how the broken `?` popover passed. Inline each script **where its tag sits**, and keep `type="module"` so deferred timing matches the real page. (v:2026-11-19 · high · S-20261119-0002)
+- [PITFALL] The popup's bundled chunk carried Vite's `modulepreload` polyfill, which calls `fetch()` — dead code (no such links exist) but it breaks the "no network" promise and trips any honest scanner. Removed. (v:2026-11-19 · med · S-20261119-0003)
+- [PITFALL] All three pages loaded Google Fonts, contradicting the README's "no network requests" claim. The UI is now system-font only, and `tests/offline.test.js` guards it. (v:2026-11-19 · high · S-20261119-0003)
 - [CONVENTION] Derive the popup test's script list from `popup.html` so deleting a script cannot silently break the test. (v:2026-11-19 · med · S-20261119-0001)
 
 ## [area: workflow]

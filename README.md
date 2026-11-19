@@ -2,7 +2,7 @@
 
 Automatically fast-forwards the silent and low-volume parts of any video you watch — right in your browser.
 
-**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.13.1
+**Author:** Pavneet Singh ([@pavnxet](https://github.com/pavnxet)) · **License:** MIT · **Version:** 1.13.2
 
 ---
 
@@ -42,7 +42,7 @@ Automatically fast-forwards the silent and low-volume parts of any video you wat
 - **Reset stats** — one click, with a confirm.
 
 ### Privacy & platform
-- **Fully local** — no account, no server, no network requests of any kind. Every bit of audio analysis happens in your browser.
+- **Fully local** — no account, no server, no network requests of any kind. Every bit of audio analysis happens in your browser, and the UI uses system fonts so not even a font CDN is contacted. `tests/offline.test.js` enforces this.
 - **No data collection** — nothing is transmitted anywhere; stats live in `chrome.storage.local`.
 - **Manifest V3** — Chrome, Edge, Brave and other Chromium browsers; also loads in Firefox via `about:debugging`.
 - **Warm, quiet UI** — ivory canvas, terracotta accent and serif headings, with eased transitions throughout.
@@ -203,6 +203,8 @@ node tests/guard.test.js
 node tests/value.test.js
 node tests/shortcuts.test.js
 node tests/help.test.js
+node tests/offline.test.js  # asserts nothing reaches the network
+node tools/lint-dom.js .    # DOM order, duplicate ids, missing scripts
 node tests/popup.test.js    # types custom values into the real popup in headless Chromium
 node tests/engine.test.js   # runs the real content script in headless Chromium; skips if absent
 ```

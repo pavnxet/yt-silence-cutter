@@ -125,7 +125,9 @@
     if (!s) return;
     enabled = s.enabled !== false;
     if (typeof s.playbackSpeed === "number") rates.speech = s.playbackSpeed;
-    if (typeof s.silenceSpeed === "number") rates.silence = s.silenceSpeed;
+    // the label means the rate silence actually plays at, exactly as the
+    // content script reports it — not the bare boost multiplier
+    if (typeof s.silenceSpeed === "number") rates.silence = rates.speech * s.silenceSpeed;
     paintBadge();
     paintRates();
   }

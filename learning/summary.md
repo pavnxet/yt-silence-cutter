@@ -30,3 +30,13 @@
 - **Verified**: `node tests/popup.test.js` → reproduced the failure first (2 FAIL), then 15/15 pass; full suite 9 suites / 344 assertions; popup rendered headless with the real DOM order.
 - **Refs**: learning.md [area: popup], [area: tests]
 - **Open / Next**: none
+
+## S-20261119-0003 · Bug hunt: legend, override, scroll, and the network promise
+- **Agent**: General Assistant · **Tier**: T1 · **Status**: DONE
+- **Repo**: branch `main` · base `v1.13.1` · tree clean after push
+- **Request**: "find more bugs"
+- **Found**: (1) wave.js set the legend's "Skipped" to the bare boost multiplier on load and to the real rate from messages — the same label meant two things; (2) the reported skip rate ignored the session speed override while the speech rate honoured it; (3) the ? popover did not follow the popup's scroll; (4) all three pages loaded Google Fonts and the popup chunk carried Vite's `fetch`-using modulepreload polyfill, both contradicting the documented "no network requests" promise.
+- **Also**: built `tools/lint-dom.js` (DOM-order / duplicate-id / missing-file checker), added a fresh-install and a corrupt-store popup test, and `tests/offline.test.js`.
+- **Verified**: 10 suites, 369 assertions, all pass; `node /scratch/work/tools/lint-dom.js .` clean; popup re-rendered with system fonts.
+- **Refs**: learning.md [area: popup], [area: tests], [area: workflow]
+- **Open / Next**: none

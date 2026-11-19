@@ -85,4 +85,6 @@
   });
 
   window.addEventListener("resize", function () { if (openBtn) place(openBtn); });
+  // the popup body scrolls, so a fixed popover has to follow its button
+  document.addEventListener("scroll", function () { if (openBtn) place(openBtn); }, true);
 })();
